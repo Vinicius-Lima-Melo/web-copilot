@@ -1,0 +1,12 @@
+{
+    "manifest_version": 2,
+    "version": "0.0.1",
+    "name": "Web Copilot",
+    "description": "Assistente de geração de dados para o Web",
+    "author": "Vinicius Lima Melo",
+    "browser_action": {
+   	 "default_title": "Web Copilot",
+   	 "default_popup": "index.html",
+   	 "default_icon": "Logo.png"
+    }
+}
