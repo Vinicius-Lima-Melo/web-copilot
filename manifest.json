@@ -6,7 +6,7 @@
     "background": {
       "service_worker": "scripts/script.js"
     },
-    "permissions": ["scripting"],
+    "permissions": ["scripting", "tabs", "<all_urls>"],
     "action": {
       "default_popup": "index.html",
       "default_icon": "images/logo.png"
