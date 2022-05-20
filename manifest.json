@@ -2,13 +2,13 @@
     "name": "Web Copilot",
     "description": "Assistente de geração de dados para o Web",
     "version": "1.0",
-    "manifest_version": 3,
-    "background": {
-      "service_worker": "scripts/script.js"
-    },
-    "permissions": ["scripting", "tabs", "<all_urls>"],
+    "content_scripts": [{
+      "matches": ["<all_urls>"],
+      "js": ["webcopilot.js"],
+      "run_at": "document_end"
+    }],
+    "manifest_version": 2,
     "action": {
-      "default_popup": "index.html",
       "default_icon": "images/logo.png"
     }
   }
