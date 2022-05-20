@@ -7,7 +7,7 @@
       "js": ["webcopilot.js"],
       "run_at": "document_end"
     }],
-    "manifest_version": 2,
+    "manifest_version": 3,
     "action": {
       "default_icon": "images/logo.png"
     }
