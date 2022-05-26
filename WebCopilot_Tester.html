@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Copilot</title>
+    <style>
+        *{
+            box-sizing: border-box;
+            /* font-family: Arial, Helvetica, sans-serif; */
+            font-family: monospace;
+        }
+        body{
+            background-color: whitesmoke;
+        }
+        label{
+            font-size: 14px;
+            color: red;
+        }
+        input{
+            border-radius: 5px;
+            outline: none;
+            border: 1px  solid gray;
+            height: 40px;
+            padding: 0 10px;
+            color: #464646;
+            margin-top: 5px;
+            width: 100%;
+        }
+        .form{
+            margin: 40px auto;
+            width: 400px;
+            padding: 20px 30px 20px;
+            background-color: rgb(233, 232, 232);
+            border-radius: 5px;
+        }
+        h3{
+            text-align: center;
+            font-size: 22px;
+        }
+        button{
+            padding: 14px 22px;
+            width: 100%;
+            border-radius: 10px;
+            border: none;
+            background-color: rgb(250, 45, 45);
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            /* margin: 20px */
+            margin-top: 20px;
+            cursor: pointer;
+        }
+        button:hover{
+            background-color: rgb(206, 36, 36);
+            transition: 200ms;
+        }
+    </style>
+    <!-- <script src="scripts/script.js"></script> -->
+</head>
+<body>
+    <div class="form">
+        <h3>Preencha o Formulário</h3>
+        <label for="">Nome de usuário</label><br>
+        <input type="text" aria-label="userName">
+        
+        <br><br>
+        
+        <label for="">Telefone</label><br>
+        <input type="text" aria-label="telefone">
+        
+        <br><br>
+        
+        <label for="">CPF</label><br>
+        <input type="text" aria-label="cpf">
+        
+        <br><br>
+        
+        <label for="">CEP</label><br>
+        <input type="text" aria-label="cep">
+        
+        <button>Cadastrar</button>
+
+    </div>
+</body>
+</html>
