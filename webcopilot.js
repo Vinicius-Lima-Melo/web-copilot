@@ -25,9 +25,6 @@ let types = {
   }
 }
 
-console.log(types)
-
-
 document.querySelectorAll('input').forEach( input => {
   let el = input
   let index = Math.floor(Math.random() * 4)
