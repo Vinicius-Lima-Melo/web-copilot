@@ -4,10 +4,24 @@
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' data: gap: https://ssl.gstatic.com 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src *; img-src 'self' data: content:;">
     <title>Web Copilot</title>
-    <!-- <script src="scripts/script.js"></script> -->
+    <script src="scripts/jquery-3.6.0.slim.min.js"></script>
+    <script src="scripts/script.js"></script>
 </head>
-<body>
-    <span>Web Copilot running...</span>
+<body style="min-width: 250px; background-color: rgb(246, 194, 49);">
+    <div style="width: 100%; display: flex;justify-content: center;">
+        <img style="width: 25px; object-fit: contain" src="./images/logo.png" alt="">
+        <h4 style="margin-left: 5px">Web Copilot</h4>
+    </div>
+    <div>
+        <input type="checkbox" id="autocomplete" name="" value="">
+        <label for="autocomplete">Preencher dados automaticamente</label>
+    </div>
+    <div>
+        <input type="checkbox" onclick="localStorage.setItem('WC_Sugestoes', true)" id="sugestoes" name="" value="1">
+        <label for="sugestoes">Exibir sugestões</label>
+    </div>
+
 </body>
 </html>
