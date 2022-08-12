@@ -1,0 +1,23 @@
+{
+    "data": {
+        "type": "users",
+        "id": "1",
+        "attributes": {
+            "name": "John Doe"
+        },
+        "relationships": {
+            "posts": {
+                "data": [
+                    {
+                        "type": "posts",
+                        "id": "1"
+                    },
+                    {
+                        "type": "posts",
+                        "id": "2"
+                    }
+                ]
+            }
+        }
+    }
+}
