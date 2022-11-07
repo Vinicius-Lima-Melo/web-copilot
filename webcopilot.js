@@ -2,9 +2,8 @@ console.log("WC - webcopilot.js");
 console.log("WC > running...");
 
 
-
-
 chrome.storage.sync.get(["WC_autocomplete", "WC_show_suggestions"], function (items) {
+  console.log("WC > items", items);
   if(items.WC_autocomplete) {
     executeScript();
   }
@@ -44,8 +43,26 @@ function executeScript(){
   
   document.querySelectorAll("input").forEach((element) => {
     if (element.ariaLabel === null || element.ariaLabel === "") return;
-    element.style.borderColor = "#0F0";
+    element.style.borderColor = "#f6c231";
+
+    getCorrespondingValue(element.ariaLabel+'s')
+
     let index = Math.floor(Math.random() * 4);
     element.value = types[element.ariaLabel + "s"][index];
   });
+
+  function getCorrespondingValue(label) {
+    switch (label) {
+      case "userNames":
+        return Chance.name();
+      case "telefones":
+        return Chance.phone();
+      case "ceps":
+        return Chance.zip();
+      case "cpfs":
+        return Chance.cpf();
+      default:
+        return "";
+    }
+  }
 }
