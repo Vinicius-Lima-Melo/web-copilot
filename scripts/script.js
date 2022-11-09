@@ -25,6 +25,6 @@ $(document).on('change', '#WC_autocomplete', function(e) {
 $(document).on('click', '#btn_refresh', function(e) {
     chrome.storage.sync.set({WC_need_reload: false});
     location.reload();
-    
+
 }); 
 

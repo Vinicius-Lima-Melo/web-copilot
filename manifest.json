@@ -7,7 +7,7 @@
     ],
     "content_scripts": [{
       "matches": ["<all_urls>"],
-      "js": ["webcopilot.js"],
+      "js": ["./scripts/chance.min.js","webcopilot.js"],
       "run_at": "document_end"
     }],
     "manifest_version": 3,
@@ -15,4 +15,5 @@
       "default_icon": "images/logo.png",
       "default_popup": "index.html"
     }
+    
   }
