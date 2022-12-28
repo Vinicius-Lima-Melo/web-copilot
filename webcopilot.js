@@ -6,7 +6,10 @@ console.log(chance.zip());
 chrome.storage.sync.get(["WC_autocomplete", "WC_show_suggestions"], function (items) {
   console.log("WC > items", items);
   if(items.WC_autocomplete) {
-    executeScript();
+    console.log("WC >Waiting 4 seconds to execute script...")
+    setTimeout(() => {
+      executeScript();
+    }, 4000);
   }
   else{
     console.log("WC > WC_autocomplete is disabled");
@@ -15,10 +18,17 @@ chrome.storage.sync.get(["WC_autocomplete", "WC_show_suggestions"], function (it
 
 
 function executeScript(){
+  console.log("WC > executing script...");
+
   document.querySelectorAll("input").forEach((element) => {
-    if (element.ariaLabel === null || element.ariaLabel === "") return;
+
+    let webcopilot_label = element.getAttribute("web-copilot");
+
+    if (webcopilot_label === null || webcopilot_label === "") return;
+
     element.style.borderColor = "#f6c231";
-    element.value = getCorrespondingValue(element.ariaLabel+'s')
+    element.value = getCorrespondingValue(webcopilot_label+'s')
+    
   });
 
   function getCorrespondingValue(label) {
