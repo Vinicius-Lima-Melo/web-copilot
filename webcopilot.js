@@ -1,24 +1,30 @@
-console.log("WC - webcopilot.js");
-console.log("WC > running...");
-
-console.log(chance.zip());
+wcLog("webcopilot.js");
+wcLog("running...");
 
 chrome.storage.sync.get(["WC_autocomplete", "WC_show_suggestions"], function (items) {
-  console.log("WC > items", items);
+  // console.log("items", items);
+  wcLog("WC_items", items)
   if(items.WC_autocomplete) {
-    console.log("WC >Waiting 4 seconds to execute script...")
-    setTimeout(() => {
-      executeScript();
-    }, 4000);
+    wcLog("Searching for inputs... ")
+    let interval = setInterval(() => {
+      if(document.querySelectorAll("input").length !== 0){
+        wcLog(document.querySelectorAll("input").length+" Inputs found! ")
+        clearInterval(interval);
+        executeScript();
+      }
+    }, 500)
+    // setTimeout(() => {
+    //   executeScript();
+    // }, 1000);
   }
   else{
-    console.log("WC > WC_autocomplete is disabled");
+    wcLog("WC_autocomplete is disabled")
   }
 });
 
 
 function executeScript(){
-  console.log("WC > executing script...");
+  wcLog("executing script...")
 
   document.querySelectorAll("input").forEach((element) => {
 
@@ -28,7 +34,7 @@ function executeScript(){
 
     element.style.borderColor = "#f6c231";
     element.value = getCorrespondingValue(webcopilot_label+'s')
-    
+
   });
 
   function getCorrespondingValue(label) {
@@ -45,4 +51,11 @@ function executeScript(){
         return "";
     }
   }
+
+  
 }
+
+function wcLog(msg){
+    console.log('%c WC > %c'+msg, 'color:#f6c231', 'color:#c1c1c1');
+    return
+  }
