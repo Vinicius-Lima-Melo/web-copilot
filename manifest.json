@@ -1,0 +1,19 @@
+{
+    "name": "Web Copilot",
+    "description": "Assistente de geração de dados para o Web",
+    "version": "1.0",
+    "permissions": [
+      "storage"
+    ],
+    "content_scripts": [{
+      "matches": ["<all_urls>"],
+      "js": ["./scripts/chance.min.js","webcopilot.js"],
+      "run_at": "document_end"
+    }],
+    "manifest_version": 3,
+    "action": {
+      "default_icon": "images/logo.png",
+      "default_popup": "index.html"
+    }
+    
+  }
