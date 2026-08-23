@@ -18,7 +18,7 @@
             font-size: 14px;
             color: red;
         }
-        input{
+        input, select{
             border-radius: 5px;
             outline: none;
             border: 1px  solid gray;
@@ -39,6 +39,11 @@
             text-align: center;
             font-size: 22px;
         }
+        h4{
+            margin-top: 30px;
+            border-top: 2px dashed #bbb;
+            padding-top: 15px;
+        }
         button{
             padding: 14px 22px;
             width: 100%;
@@ -56,30 +61,130 @@
             background-color: rgb(206, 36, 36);
             transition: 200ms;
         }
+        .checkbox-row{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+        .checkbox-row input{
+            width: auto;
+            height: auto;
+        }
+        .checkbox-row label{
+            color: #464646;
+        }
     </style>
     <!-- <script src="scripts/script.js"></script> -->
 </head>
 <body>
     <div class="form">
         <h3>Preencha o Formulário</h3>
+
+        <h4>Compatibilidade (atributo web-copilot)</h4>
+
         <label for="">Nome de usuário</label><br>
         <input type="text" web-copilot="userName">
-        
+
         <br><br>
-        
+
         <label for="">Telefone</label><br>
         <input type="text" web-copilot="telefone">
-        
+
         <br><br>
-        
+
         <label for="">CPF</label><br>
         <input type="text" web-copilot="cpf">
-        
+
         <br><br>
-        
+
         <label for="">CEP</label><br>
         <input type="text" web-copilot="cep">
-        
+
+        <h4>Detecção automática (cadastro real, sem atributo)</h4>
+
+        <label for="fullName">Nome completo</label><br>
+        <input type="text" id="fullName" name="fullName" placeholder="Digite seu nome completo">
+
+        <br><br>
+
+        <label for="email">E-mail</label><br>
+        <input type="email" id="email" name="email" placeholder="seu@email.com">
+
+        <br><br>
+
+        <label for="password">Senha</label><br>
+        <input type="password" id="password" name="password" placeholder="Crie uma senha">
+
+        <br><br>
+
+        <label for="cnpj">CNPJ</label><br>
+        <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00">
+
+        <br><br>
+
+        <label for="razaoSocial">Razão Social</label><br>
+        <input type="text" id="razaoSocial" name="razaoSocial">
+
+        <br><br>
+
+        <label for="rua">Endereço</label><br>
+        <input type="text" id="rua" name="rua" placeholder="Rua / Avenida">
+
+        <br><br>
+
+        <label for="numero">Número</label><br>
+        <input type="text" id="numero" name="numero">
+
+        <br><br>
+
+        <label for="complemento">Complemento</label><br>
+        <input type="text" id="complemento" name="complemento">
+
+        <br><br>
+
+        <label for="bairro">Bairro</label><br>
+        <input type="text" id="bairro" name="bairro">
+
+        <br><br>
+
+        <label for="cidade">Cidade</label><br>
+        <input type="text" id="cidade" name="cidade">
+
+        <br><br>
+
+        <label for="estado">Estado</label><br>
+        <select id="estado" name="estado">
+            <option value="">Selecione</option>
+            <option value="SP">SP</option>
+            <option value="RJ">RJ</option>
+            <option value="MG">MG</option>
+            <option value="PR">PR</option>
+            <option value="RS">RS</option>
+            <option value="BA">BA</option>
+            <option value="CE">CE</option>
+            <option value="PE">PE</option>
+            <option value="DF">DF</option>
+            <option value="AM">AM</option>
+            <option value="GO">GO</option>
+            <option value="SC">SC</option>
+        </select>
+
+        <br><br>
+
+        <label for="dataNascimento">Data de nascimento</label><br>
+        <input type="date" id="dataNascimento" name="dataNascimento">
+
+        <br><br>
+
+        <label for="idade">Idade</label><br>
+        <input type="text" id="idade" name="idade">
+
+        <div class="checkbox-row">
+            <input type="checkbox" id="termos" name="termos">
+            <label for="termos">Li e aceito os termos de uso e a política de privacidade</label>
+        </div>
+
         <button>Cadastrar</button>
 
     </div>
