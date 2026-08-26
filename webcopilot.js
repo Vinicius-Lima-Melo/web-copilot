@@ -42,14 +42,19 @@
     cep: "cep",
     ceps: "cep",
     cpf: "cpf",
-    cpfs: "cpf"
+    cpfs: "cpf",
+    documento: "cpfCnpj",
+    documentos: "cpfCnpj"
   };
 
   // Regras de detecção automática por nome/id/placeholder/autocomplete/label/type.
-  // Ordem importa: regras mais específicas primeiro.
+  // Ordem importa: regras mais específicas primeiro. O combo cpf/cnpj precisa vir
+  // antes das regras isoladas de cnpj e cpf, senão "CPF/CNPJ" cai sempre em cnpj
+  // (a regra /cnpj/ já dá match no final da string "cpf/cnpj").
   var DETECTION_RULES = [
     { type: "email", re: /e-?mail/ },
     { type: "password", re: /senha|password|\bpwd\b/ },
+    { type: "cpfCnpj", re: /cpf\s*[\/\-_]?\s*cnpj|cnpj\s*[\/\-_]?\s*cpf|cpf\s+ou\s+cnpj|cnpj\s+ou\s+cpf/ },
     { type: "cnpj", re: /cnpj/ },
     { type: "cpf", re: /\bcpf\b/ },
     { type: "companyName", re: /razao ?social|nome ?fantasia/ },
@@ -73,6 +78,7 @@
   var FIELD_LABELS = {
     email: "e-mail de teste",
     password: "senha de teste",
+    cpfCnpj: "CPF/CNPJ de teste",
     cnpj: "CNPJ de teste",
     cpf: "CPF de teste",
     companyName: "razão social de teste",
@@ -226,6 +232,27 @@
     return "";
   }
 
+  // Fallback para quando não há <label for> nem wrapping real (comum em
+  // componentes React/Vue com "floating label" solto em <span>/<div>): pega o
+  // texto do irmão anterior ou de outro filho curto no mesmo container.
+  function getNearbyText(element) {
+    var prev = element.previousElementSibling;
+    if (prev && /^(label|span|div|p|small|strong)$/i.test(prev.tagName)) {
+      var prevText = (prev.textContent || "").trim();
+      if (prevText && prevText.length < 60) return prevText;
+    }
+
+    var parent = element.parentElement;
+    if (!parent) return "";
+    for (var i = 0; i < parent.childNodes.length; i++) {
+      var node = parent.childNodes[i];
+      if (node === element) continue;
+      var text = (node.textContent || "").trim();
+      if (text && text.length < 60) return text;
+    }
+    return "";
+  }
+
   function buildContext(element) {
     var parts = [
       element.name,
@@ -233,9 +260,21 @@
       element.getAttribute("placeholder"),
       element.getAttribute("autocomplete"),
       element.getAttribute("aria-label"),
+      element.getAttribute("title"),
+      element.getAttribute("pattern"),
+      element.getAttribute("inputmode"),
       getLabelText(element)
     ].filter(Boolean);
+
     return normalize(parts.join(" "));
+  }
+
+  function matchDetectionRules(ctx) {
+    if (!ctx) return null;
+    for (var i = 0; i < DETECTION_RULES.length; i++) {
+      if (DETECTION_RULES[i].re.test(ctx)) return DETECTION_RULES[i].type;
+    }
+    return null;
   }
 
   function detectFieldType(element) {
@@ -244,12 +283,12 @@
       return LEGACY_ALIASES[override] || override;
     }
 
-    var ctx = buildContext(element);
-    if (ctx) {
-      for (var i = 0; i < DETECTION_RULES.length; i++) {
-        if (DETECTION_RULES[i].re.test(ctx)) return DETECTION_RULES[i].type;
-      }
-    }
+    var type = matchDetectionRules(buildContext(element));
+    // name/id quase sempre existem (mesmo genéricos, tipo "doc2"), então o
+    // contexto principal raramente vem vazio. Só tenta o texto vizinho (label
+    // solto, sem <label for>) como segunda passada, depois que o principal falhou.
+    if (!type) type = matchDetectionRules(normalize(getNearbyText(element)));
+    if (type) return type;
 
     switch (element.type) {
       case "email": return "email";
@@ -258,6 +297,70 @@
       case "password": return "password";
       default: return null;
     }
+  }
+
+  // ---------------------------------------------------------------------
+  // Cor de destaque: usa a cor principal do site em vez de uma cor fixa
+  // ---------------------------------------------------------------------
+
+  var ACCENT_VAR_NAMES = [
+    "--primary", "--primary-color", "--color-primary", "--brand-color", "--brand",
+    "--accent-color", "--accent", "--main-color", "--theme-color",
+    "--bs-primary", "--mdc-theme-primary", "--ion-color-primary", "--el-color-primary"
+  ];
+
+  function colorToRgb(value) {
+    var probe = document.createElement("span");
+    probe.style.color = "";
+    probe.style.color = value;
+    if (!probe.style.color) return null;
+
+    document.body.appendChild(probe);
+    var computed = getComputedStyle(probe).color;
+    document.body.removeChild(probe);
+
+    var m = computed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (!m) return null;
+    if (m[4] !== undefined && parseFloat(m[4]) === 0) return null;
+    return { r: +m[1], g: +m[2], b: +m[3] };
+  }
+
+  function isUsableAccent(value) {
+    if (!value) return false;
+    value = value.trim();
+    if (!value || value === "transparent" || value === "inherit" || value === "initial" || value === "none") return false;
+
+    var rgb = colorToRgb(value);
+    if (!rgb) return false;
+    // Perto do branco não dá pra ver como borda na maioria dos formulários.
+    if (rgb.r > 245 && rgb.g > 245 && rgb.b > 245) return false;
+    return true;
+  }
+
+  function findSiteAccentColor() {
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta && isUsableAccent(meta.content)) return meta.content.trim();
+
+    var rootStyle = getComputedStyle(document.documentElement);
+    for (var i = 0; i < ACCENT_VAR_NAMES.length; i++) {
+      var value = rootStyle.getPropertyValue(ACCENT_VAR_NAMES[i]);
+      if (isUsableAccent(value)) return value.trim();
+    }
+
+    var candidates = document.querySelectorAll(
+      'button[type="submit"], input[type="submit"], .btn-primary, .primary, a.button'
+    );
+    for (var j = 0; j < candidates.length; j++) {
+      var bg = getComputedStyle(candidates[j]).backgroundColor;
+      if (isUsableAccent(bg)) return bg;
+    }
+
+    return "#f6c231";
+  }
+
+  function getSiteAccentColor() {
+    if (!window.__wcAccentColor) window.__wcAccentColor = findSiteAccentColor();
+    return window.__wcAccentColor;
   }
 
   // ---------------------------------------------------------------------
@@ -307,6 +410,7 @@
     var generators = {
       email: function () { return generateEmail(profile); },
       password: generatePassword,
+      cpfCnpj: function () { return chance.bool() ? chance.cpf() : chance.cnpj(); },
       cnpj: function () { return chance.cnpj(); },
       cpf: function () { return chance.cpf(); },
       companyName: generateCompanyName,
@@ -332,10 +436,41 @@
     return true;
   }
 
+  // Marca visualmente o campo com a cor de destaque, garantindo que a borda
+  // apareça mesmo em sites que zeram `border` por padrão (ex: Tailwind reset).
+  function highlightElement(element, color) {
+    var computed = getComputedStyle(element);
+    if (parseFloat(computed.borderWidth) === 0 || computed.borderStyle === "none") {
+      element.style.borderStyle = "solid";
+      element.style.borderWidth = "2px";
+    }
+    element.style.borderColor = color;
+  }
+
+  // Insere (ou reaproveita) o textinho "Atualizado pelo WebCopilot" logo
+  // abaixo do campo preenchido.
+  function addFilledHint(element, color, message) {
+    var next = element.nextElementSibling;
+    if (next && next.classList && next.classList.contains("wc-hint")) {
+      next.textContent = message;
+      next.style.color = color;
+      return;
+    }
+
+    var hint = document.createElement("small");
+    hint.className = "wc-hint";
+    hint.textContent = message;
+    hint.style.cssText =
+      "display:block;flex-basis:100%;font-size:11px;line-height:1.3;margin-top:2px;" +
+      "font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;color:" + color + ";";
+    element.insertAdjacentElement("afterend", hint);
+  }
+
   function fillForm(showSuggestions, force) {
     var profile = createProfile();
     var fields = document.querySelectorAll("input, select, textarea");
     var filledCount = 0;
+    var accentColor = getSiteAccentColor();
 
     fields.forEach(function (element) {
       if (["submit", "button", "reset", "hidden", "file", "image"].indexOf(element.type) !== -1) return;
@@ -351,7 +486,11 @@
 
       if (fillElement(element, type, profile)) {
         element.dataset.wcFilled = "1";
-        element.style.borderColor = "#f6c231";
+        highlightElement(element, accentColor);
+
+        var isCheckable = element.type === "checkbox" || element.type === "radio";
+        addFilledHint(element, accentColor, isCheckable ? "Marcado pelo WebCopilot" : "Atualizado pelo WebCopilot");
+
         filledCount++;
       }
     });
