@@ -2,255 +2,192 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web Copilot</title>
+    <!-- core + values dão ao popup os rótulos dos tipos de campo -->
+    <script src="scripts/wc-core.js" defer></script>
+    <script src="scripts/wc-values.js" defer></script>
     <script src="scripts/script.js" defer></script>
     <style>
         :root {
-            --wc-yellow: #f6c231;
-            --wc-yellow-dark: #dda815;
-            --wc-green: #2ecc71;
-            --wc-green-dark: #27ae60;
-            --wc-text: #33333a;
-            --wc-text-light: #8b8b93;
-            --wc-icon: #a3a3ab;
-            --wc-border: #ececef;
-            --wc-bg: #ffffff;
-            --wc-track-off: #d8d8dd;
+            --yellow: #f6c231;
+            --yellow-dark: #dda815;
+            --green: #2ecc71;
+            --green-dark: #27ae60;
+            --red: #e05252;
+            --orange: #d98324;
+            --text: #2c2c33;
+            --muted: #83838d;
+            --icon: #a3a3ab;
+            --border: #ececef;
+            --bg: #ffffff;
+            --surface: #f7f7f9;
+            --track: #d8d8dd;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text: #e8e8ec;
+                --muted: #9b9ba5;
+                --icon: #8b8b95;
+                --border: #35353d;
+                --bg: #1e1e23;
+                --surface: #292930;
+                --track: #45454f;
+            }
         }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            width: 300px;
+            width: 330px;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background: var(--wc-bg);
-            color: var(--wc-text);
-            padding: 14px;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
         }
 
         .header {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding-bottom: 12px;
-            margin-bottom: 12px;
-            border-bottom: 1px solid var(--wc-border);
+            gap: 9px;
+            padding: 12px 14px 10px;
+        }
+        .header img { width: 24px; height: 24px; border-radius: 6px; object-fit: contain; }
+        .header h1 { font-size: 14px; font-weight: 650; letter-spacing: -0.2px; flex: 1; }
+        .badge {
+            font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+            color: var(--green-dark); background: rgba(46, 204, 113, .14);
+            padding: 3px 7px; border-radius: 20px;
         }
 
-        .header img {
-            width: 26px;
-            height: 26px;
-            border-radius: 7px;
-            object-fit: contain;
+        .tabs { display: flex; gap: 2px; padding: 0 10px; border-bottom: 1px solid var(--border); }
+        .tab {
+            flex: 1; border: 0; background: none; font-family: inherit; font-size: 12px; font-weight: 600;
+            color: var(--muted); padding: 8px 4px 9px; cursor: pointer; border-bottom: 2px solid transparent;
         }
+        .tab:hover { color: var(--text); }
+        .tab.active { color: var(--text); border-bottom-color: var(--yellow); }
 
-        .header h1 {
-            font-size: 15px;
-            font-weight: 600;
-            letter-spacing: -0.2px;
+        .panel { display: none; padding: 12px 14px 14px; max-height: 470px; overflow-y: auto; }
+        .panel.active { display: block; }
+        .panel::-webkit-scrollbar { width: 8px; }
+        .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+
+        .section-title {
+            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+            color: var(--muted); margin: 14px 0 7px;
         }
+        .section-title:first-child { margin-top: 0; }
 
-        .header .badge {
-            margin-left: auto;
-            font-size: 10px;
-            font-weight: 600;
-            color: var(--wc-green-dark);
-            background: #e8f9ef;
-            padding: 3px 8px;
-            border-radius: 20px;
-        }
+        .card { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; }
+        .row { display: flex; align-items: center; gap: 11px; padding: 10px 11px; }
+        .row + .row { border-top: 1px solid var(--border); }
+        .row-text { flex: 1; min-width: 0; }
+        .row-title { font-size: 12.5px; font-weight: 600; line-height: 16px; }
+        .row-sub { font-size: 10.5px; color: var(--muted); line-height: 14px; margin-top: 1px; }
+        .row-icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--icon); }
 
-        .card {
-            border: 1px solid var(--wc-border);
-            border-radius: 12px;
-            overflow: hidden;
-            margin-bottom: 10px;
-        }
-
-        .row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 11px 12px;
-        }
-
-        .row + .row {
-            border-top: 1px solid var(--wc-border);
-        }
-
-        .row-icon {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            color: var(--wc-icon);
-        }
-
-        .row-text {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .row-title {
-            font-size: 13px;
-            font-weight: 600;
-            line-height: 16px;
-        }
-
-        .row-sub {
-            font-size: 11px;
-            color: var(--wc-text-light);
-            line-height: 14px;
-            margin-top: 2px;
-        }
-
-        .switch {
-            position: relative;
-            width: 36px;
-            height: 20px;
-            flex-shrink: 0;
-            cursor: pointer;
-        }
-
-        .switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-            position: absolute;
-        }
-
-        .switch .track {
-            position: absolute;
-            inset: 0;
-            background: var(--wc-track-off);
-            border-radius: 20px;
-            transition: background .15s ease;
-        }
-
+        .switch { position: relative; width: 34px; height: 19px; flex-shrink: 0; cursor: pointer; }
+        .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+        .switch .track { position: absolute; inset: 0; background: var(--track); border-radius: 20px; transition: background .15s; }
         .switch .thumb {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            width: 16px;
-            height: 16px;
-            background: #fff;
-            border-radius: 50%;
-            transition: transform .15s ease;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+            position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; background: #fff;
+            border-radius: 50%; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25);
         }
+        .switch input:checked + .track { background: var(--yellow); }
+        .switch input:checked + .track .thumb { transform: translateX(15px); }
 
-        .switch input:checked + .track {
-            background: var(--wc-yellow);
+        .segmented { display: flex; background: var(--surface); border-radius: 9px; padding: 3px; gap: 3px; }
+        .segmented button {
+            flex: 1; border: 0; background: none; font-family: inherit; font-size: 11.5px; font-weight: 600;
+            color: var(--muted); padding: 6px 4px; border-radius: 7px; cursor: pointer;
         }
-
-        .switch input:checked + .track .thumb {
-            transform: translateX(16px);
-        }
+        .segmented button.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+        .segmented button.active[data-mode="invalid"] { color: var(--orange); }
+        .segmented button.active[data-mode="chaos"] { color: var(--red); }
+        .mode-hint { font-size: 10.5px; color: var(--muted); line-height: 1.4; margin-top: 6px; }
 
         button.action {
-            width: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            height: 40px;
-            border: none;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            color: #fff;
-            transition: filter .15s ease, transform .05s ease;
+            width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
+            height: 38px; border: none; border-radius: 9px; font-size: 12.5px; font-weight: 650;
+            font-family: inherit; cursor: pointer; color: #fff; transition: filter .15s, transform .05s;
         }
+        button.action svg { width: 14px; height: 14px; flex-shrink: 0; }
+        button.action:active { transform: scale(.985); }
+        button.action:hover { filter: brightness(1.06); }
+        button.action:disabled { opacity: .5; cursor: not-allowed; filter: none; }
+        #btn_fill { background: var(--green); margin-bottom: 7px; }
+        .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+        button.ghost {
+            height: 34px; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+            border-radius: 9px; font-size: 11.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+        }
+        button.ghost:hover { background: var(--surface); }
 
-        button.action svg {
-            width: 15px;
-            height: 15px;
-            flex-shrink: 0;
-        }
+        .status { font-size: 11px; color: var(--muted); text-align: center; min-height: 15px; margin-top: 9px; line-height: 1.4; }
+        .status.ok { color: var(--green-dark); }
+        .status.err { color: var(--red); }
 
-        button.action:active {
-            transform: scale(0.98);
+        .persona-card { background: var(--surface); border-radius: 11px; padding: 11px; }
+        .persona-name { font-size: 14px; font-weight: 650; }
+        .persona-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+        .fields { margin-top: 9px; display: flex; flex-direction: column; gap: 1px; }
+        .field {
+            display: flex; align-items: baseline; gap: 8px; padding: 4px 6px; border-radius: 6px;
+            cursor: pointer; font-size: 11.5px;
         }
+        .field:hover { background: var(--bg); }
+        .field b { color: var(--muted); font-weight: 500; width: 92px; flex-shrink: 0; }
+        .field span { font-variant-numeric: tabular-nums; word-break: break-all; }
 
-        button.action:hover {
-            filter: brightness(1.06);
+        .list { display: flex; flex-direction: column; gap: 5px; }
+        .item {
+            display: flex; align-items: center; gap: 8px; font-size: 11.5px;
+            background: var(--surface); border-radius: 8px; padding: 7px 9px;
         }
+        .item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .item code { font-size: 10.5px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+        .item button {
+            border: 0; background: none; color: var(--icon); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px;
+        }
+        .item button:hover { color: var(--red); }
+        .empty { font-size: 11px; color: var(--muted); text-align: center; padding: 10px 0; }
 
-        #btn_fill_now {
-            background: var(--wc-green);
-            margin-bottom: 8px;
+        label.input-row { display: flex; align-items: center; gap: 9px; padding: 9px 11px; }
+        label.input-row .row-text { flex: 1; }
+        input.text, select.text {
+            width: 108px; flex-shrink: 0; border: 1px solid var(--border); background: var(--bg); color: var(--text);
+            border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 11.5px; outline: none;
         }
+        input.text:focus, select.text:focus { border-color: var(--yellow); }
+        input.tiny { width: 54px; }
 
-        #btn_refresh {
-            background: var(--wc-yellow);
-            color: #4a3b00;
+        .kbd {
+            font-family: ui-monospace, Menlo, monospace; font-size: 10px; background: var(--surface);
+            border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px;
         }
-
-        #btn_refresh:disabled {
-            background: #ececef;
-            color: #b3b3ba;
-            cursor: not-allowed;
-            filter: none;
-        }
-
-        .footer {
-            text-align: center;
-            font-size: 10px;
-            color: #c2c2c8;
-            margin-top: 12px;
-        }
+        .footer { text-align: center; font-size: 9.5px; color: var(--muted); padding: 0 14px 11px; }
+        a { color: inherit; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <img src="./images/logo.png" alt="Web Copilot">
-        <h1>Web Copilot</h1>
-        <span class="badge">grátis</span>
-    </div>
+<div class="header">
+    <img src="./images/logo.png" alt="">
+    <h1>Web Copilot</h1>
+    <span class="badge" id="version">v2.0</span>
+</div>
 
-    <div class="card">
-        <div class="row">
-            <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2.5" y="5" width="19" height="14" rx="2.2"/>
-                <circle cx="8" cy="12" r="2"/>
-                <line x1="13" y1="10" x2="18" y2="10"/>
-                <line x1="13" y1="14" x2="17" y2="14"/>
-            </svg>
-            <div class="row-text">
-                <div class="row-title">Autocompletar</div>
-                <div class="row-sub">Preencher dados automaticamente</div>
-            </div>
-            <label class="switch">
-                <input type="checkbox" id="WC_autocomplete">
-                <span class="track"><span class="thumb"></span></span>
-            </label>
-        </div>
-        <div class="row">
-            <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="9.5"/>
-                <path d="M9.4 9.2a2.6 2.6 0 1 1 3.5 2.4c-.9.4-1.5 1-1.5 2.1"/>
-                <circle cx="11.4" cy="16.6" r="0.15" fill="currentColor" stroke="none"/>
-            </svg>
-            <div class="row-text">
-                <div class="row-title">Sugestões</div>
-                <div class="row-sub">Mostrar dica ao passar o mouse</div>
-            </div>
-            <label class="switch">
-                <input type="checkbox" id="WC_show_suggestions">
-                <span class="track"><span class="thumb"></span></span>
-            </label>
-        </div>
-    </div>
+<div class="tabs">
+    <button class="tab active" data-panel="fill">Preencher</button>
+    <button class="tab" data-panel="persona">Persona</button>
+    <button class="tab" data-panel="settings">Ajustes</button>
+</div>
 
-    <button class="action" id="btn_fill_now">
+<!-- ------------------------------------------------------- Preencher -->
+<div class="panel active" id="panel-fill">
+    <button class="action" id="btn_fill">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4.5 19.5 15 9"/>
             <path d="M13 4l.8 1.7L15.5 6.5l-1.7.8L13 9l-.8-1.7L10.5 6.5l1.7-.8z"/>
@@ -258,17 +195,184 @@
         </svg>
         <span>Preencher agora</span>
     </button>
-    <button class="action" id="btn_refresh" disabled>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 11A8 8 0 0 0 6 5.3L4 7"/>
-            <path d="M4 4v3.5h3.5"/>
-            <path d="M4 13a8 8 0 0 0 14 5.7L20 17"/>
-            <path d="M20 20v-3.5h-3.5"/>
-        </svg>
-        <span>Aplicar alterações</span>
-    </button>
+    <div class="pair">
+        <button class="ghost" id="btn_new">Nova persona</button>
+        <button class="ghost" id="btn_undo">Desfazer</button>
+    </div>
+    <div class="status" id="status"></div>
 
-    <div class="footer">Gera dados de teste — nunca use em produção real.</div>
+    <div class="section-title">Modo dos dados</div>
+    <div class="segmented" id="mode">
+        <button data-mode="valid" class="active">Válido</button>
+        <button data-mode="invalid">Inválido</button>
+        <button data-mode="chaos">Caos</button>
+    </div>
+    <div class="mode-hint" id="mode_hint"></div>
+
+    <div class="section-title">Comportamento</div>
+    <div class="card">
+        <div class="row">
+            <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2.5" y="5" width="19" height="14" rx="2.2"/><circle cx="8" cy="12" r="2"/>
+                <line x1="13" y1="10" x2="18" y2="10"/><line x1="13" y1="14" x2="17" y2="14"/>
+            </svg>
+            <div class="row-text">
+                <div class="row-title">Autocompletar</div>
+                <div class="row-sub">Preencher assim que a página carregar</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_autocomplete"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="row">
+            <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="4" width="18" height="14" rx="2.4"/><path d="M8 21h8"/><path d="M12 18v3"/>
+            </svg>
+            <div class="row-text">
+                <div class="row-title">Painel na página</div>
+                <div class="row-sub">Atalhos e resumo da persona no canto</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_hud"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="row">
+            <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="9.5"/><path d="M9.4 9.2a2.6 2.6 0 1 1 3.5 2.4c-.9.4-1.5 1-1.5 2.1"/>
+                <circle cx="11.4" cy="16.6" r=".15" fill="currentColor" stroke="none"/>
+            </svg>
+            <div class="row-text">
+                <div class="row-title">Sugestões</div>
+                <div class="row-sub">Dica ao passar o mouse no campo</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_show_suggestions"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+    </div>
+
+    <div class="section-title">Campos não reconhecidos</div>
+    <div class="list" id="unknown_list"><div class="empty">Preencha uma página para ver o diagnóstico.</div></div>
+</div>
+
+<!-- --------------------------------------------------------- Persona -->
+<div class="panel" id="panel-persona">
+    <div class="persona-card">
+        <div class="persona-name" id="p_name">—</div>
+        <div class="persona-sub" id="p_sub"></div>
+        <div class="fields" id="p_fields"></div>
+    </div>
+    <div class="status" id="persona_status">Clique em um campo para copiar.</div>
+
+    <div class="pair">
+        <button class="ghost" id="btn_new_persona">Gerar outra</button>
+        <button class="ghost" id="btn_copy_json">Copiar JSON</button>
+    </div>
+
+    <div class="section-title">Reprodutibilidade</div>
+    <div class="card">
+        <label class="input-row">
+            <div class="row-text">
+                <div class="row-title">Semente</div>
+                <div class="row-sub">Mesma semente, mesma persona</div>
+            </div>
+            <input class="text" type="text" id="WC_seed" placeholder="aleatório">
+        </label>
+        <div class="row">
+            <div class="row-text">
+                <div class="row-title">Travar persona</div>
+                <div class="row-sub">Não gerar nova automaticamente</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_persona_locked"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+    </div>
+
+    <div class="section-title">Personas recentes</div>
+    <div class="list" id="history_list"><div class="empty">Nenhuma ainda.</div></div>
+</div>
+
+<!-- ---------------------------------------------------------- Ajustes -->
+<div class="panel" id="panel-settings">
+    <div class="section-title">Dados</div>
+    <div class="card">
+        <label class="input-row">
+            <div class="row-text">
+                <div class="row-title">Região</div>
+                <div class="row-sub">Base de nomes, endereços e telefones</div>
+            </div>
+            <select class="text" id="WC_locale">
+                <option value="BR">Brasil</option>
+                <option value="US">Estados Unidos</option>
+            </select>
+        </label>
+        <label class="input-row">
+            <div class="row-text">
+                <div class="row-title">Faixa de idade</div>
+                <div class="row-sub">Usada na data de nascimento</div>
+            </div>
+            <input class="text tiny" type="number" id="WC_min_age" min="0" max="120">
+            <input class="text tiny" type="number" id="WC_max_age" min="0" max="120">
+        </label>
+    </div>
+
+    <div class="section-title">Preenchimento</div>
+    <div class="card">
+        <div class="row">
+            <div class="row-text">
+                <div class="row-title">Digitação humana</div>
+                <div class="row-sub">Tecla a tecla — para campos com máscara</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_human_typing"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="row">
+            <div class="row-text">
+                <div class="row-title">Selects desconhecidos</div>
+                <div class="row-sub">Escolher uma opção qualquer válida</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_fill_unknown_selects"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="row">
+            <div class="row-text">
+                <div class="row-title">Marcar todos os checkboxes</div>
+                <div class="row-sub">Inclusive os sem rótulo reconhecido</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_check_unknown_boxes"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="row">
+            <div class="row-text">
+                <div class="row-title">Campos ocultos</div>
+                <div class="row-sub">Cuidado: pode cair em honeypot antispam</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_fill_hidden"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+    </div>
+
+    <div class="section-title">Aparência</div>
+    <div class="card">
+        <div class="row">
+            <div class="row-text">
+                <div class="row-title">Destacar campos</div>
+                <div class="row-sub">Contorno na cor do site</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_highlight"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+        <div class="row">
+            <div class="row-text">
+                <div class="row-title">Etiqueta sob o campo</div>
+                <div class="row-sub">"Atualizado pelo WebCopilot"</div>
+            </div>
+            <label class="switch"><input type="checkbox" id="WC_show_labels"><span class="track"><span class="thumb"></span></span></label>
+        </div>
+    </div>
+    <button class="ghost" id="btn_clear" style="width:100%;margin-top:8px">Limpar marcas da página</button>
+
+    <div class="section-title">Campos ensinados neste site</div>
+    <div class="list" id="overrides_list"><div class="empty">Nenhum. Clique com o botão direito num campo para ensinar.</div></div>
+
+    <div class="section-title">Atalhos</div>
+    <div class="list">
+        <div class="item"><span>Preencher</span><code class="kbd">Ctrl+Shift+Y</code></div>
+        <div class="item"><span>Nova persona</span><code class="kbd">Alt+Shift+Y</code></div>
+        <div class="item"><span>Desfazer</span><code class="kbd">Alt+Shift+Z</code></div>
+    </div>
+    <button class="ghost" id="btn_shortcuts" style="width:100%;margin-top:8px">Alterar atalhos</button>
+</div>
+
+<div class="footer">Dados fictícios para teste — nunca use em cadastro real.</div>
 
 </body>
 </html>

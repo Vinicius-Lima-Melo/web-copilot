@@ -1,19 +1,51 @@
 {
-    "name": "Web Copilot",
-    "description": "Assistente de geração de dados para o Web",
-    "version": "1.0",
-    "permissions": [
-      "storage"
-    ],
-    "content_scripts": [{
+  "manifest_version": 3,
+  "name": "Web Copilot",
+  "description": "Preenche formulários com dados de teste brasileiros válidos: CPF, CNPJ, CNH, PIS, cartão, PIX, boleto e mais de 120 tipos de campo.",
+  "version": "2.0",
+  "permissions": ["storage", "contextMenus", "scripting", "activeTab", "clipboardWrite"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
       "matches": ["<all_urls>"],
-      "js": ["./scripts/chance.min.js","webcopilot.js"],
+      "all_frames": true,
+      "js": [
+        "scripts/wc-core.js",
+        "scripts/wc-datasets.js",
+        "scripts/wc-docs.js",
+        "scripts/wc-persona.js",
+        "scripts/wc-values.js",
+        "scripts/wc-detect.js",
+        "scripts/wc-fill.js",
+        "scripts/wc-hud.js",
+        "webcopilot.js"
+      ],
       "run_at": "document_end"
-    }],
-    "manifest_version": 3,
-    "action": {
-      "default_icon": "images/logo.png",
-      "default_popup": "index.html"
     }
-    
+  ],
+  "commands": {
+    "fill-now": {
+      "suggested_key": { "default": "Ctrl+Shift+Y", "mac": "Command+Shift+Y" },
+      "description": "Preencher o formulário da aba atual"
+    },
+    "new-persona": {
+      "suggested_key": { "default": "Alt+Shift+Y", "mac": "Alt+Shift+Y" },
+      "description": "Gerar nova persona e preencher"
+    },
+    "undo-fill": {
+      "suggested_key": { "default": "Alt+Shift+Z", "mac": "Alt+Shift+Z" },
+      "description": "Desfazer o último preenchimento"
+    }
+  },
+  "action": {
+    "default_icon": "images/logo.png",
+    "default_title": "Web Copilot",
+    "default_popup": "index.html"
+  },
+  "icons": {
+    "128": "images/logo.png"
   }
+}

@@ -1,205 +1,432 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#2e7d32">
-    <title>Web Copilot</title>
-    <style>
-        *{
-            box-sizing: border-box;
-            /* font-family: Arial, Helvetica, sans-serif; */
-            font-family: monospace;
-        }
-        body{
-            background-color: whitesmoke;
-        }
-        label{
-            font-size: 14px;
-            color: red;
-        }
-        input, select{
-            border-radius: 5px;
-            outline: none;
-            border: 1px  solid gray;
-            height: 40px;
-            padding: 0 10px;
-            color: #464646;
-            margin-top: 5px;
-            width: 100%;
-        }
-        .form{
-            margin: 40px auto;
-            width: 400px;
-            padding: 20px 30px 20px;
-            background-color: rgb(233, 232, 232);
-            border-radius: 5px;
-        }
-        h3{
-            text-align: center;
-            font-size: 22px;
-        }
-        h4{
-            margin-top: 30px;
-            border-top: 2px dashed #bbb;
-            padding-top: 15px;
-        }
-        button{
-            padding: 14px 22px;
-            width: 100%;
-            border-radius: 10px;
-            border: none;
-            background-color: rgb(250, 45, 45);
-            color: white;
-            font-weight: bold;
-            font-size: 16px;
-            /* margin: 20px */
-            margin-top: 20px;
-            cursor: pointer;
-        }
-        button:hover{
-            background-color: rgb(206, 36, 36);
-            transition: 200ms;
-        }
-        .checkbox-row{
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-top: 15px;
-        }
-        .checkbox-row input{
-            width: auto;
-            height: auto;
-        }
-        .checkbox-row label{
-            color: #464646;
-        }
-    </style>
-    <!-- <script src="scripts/script.js"></script> -->
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#2e7d32">
+<title>Web Copilot — laboratório de campos</title>
+<style>
+    :root { --primary: #2e7d32; }
+    * { box-sizing: border-box; }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        background: #f2f3f5; color: #26262b; margin: 0; padding: 28px 16px 64px;
+    }
+    .page { max-width: 900px; margin: 0 auto; }
+    h1 { font-size: 22px; margin: 0 0 4px; }
+    .lead { color: #6c6c75; font-size: 13px; margin-bottom: 22px; }
+    fieldset {
+        background: #fff; border: 1px solid #e3e3e8; border-radius: 12px;
+        padding: 16px 18px 20px; margin: 0 0 16px;
+    }
+    legend { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--primary); padding: 0 6px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 12px; }
+    .f { display: flex; flex-direction: column; gap: 4px; }
+    label, .floating { font-size: 12px; color: #55555e; font-weight: 600; }
+    input, select, textarea {
+        border: 1px solid #ccccd4; border-radius: 7px; padding: 8px 10px; font-size: 13px;
+        font-family: inherit; background: #fff; color: #26262b; width: 100%;
+    }
+    input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: 1px; border-color: transparent; }
+    textarea { min-height: 64px; resize: vertical; }
+    .check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+    .check input { width: auto; }
+    .radios { display: flex; gap: 14px; flex-wrap: wrap; }
+    .editable { border: 1px solid #ccccd4; border-radius: 7px; padding: 8px 10px; min-height: 38px; background: #fff; }
+    button[type=submit] {
+        background: var(--primary); color: #fff; border: 0; border-radius: 9px;
+        padding: 12px 26px; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .warn { border-color: #f0c36d; background: #fffaf0; }
+    .warn legend { color: #a56b0a; }
+    .note { font-size: 11.5px; color: #85858f; margin-top: 8px; }
+    #wc-report {
+        background: #16161a; color: #d6d6dd; border-radius: 12px; padding: 16px;
+        font: 12px/1.55 ui-monospace, Menlo, Consolas, monospace; white-space: pre-wrap;
+        margin-bottom: 16px; display: none;
+    }
+    #wc-report.on { display: block; }
+</style>
 </head>
 <body>
-    <div class="form">
-        <h3>Preencha o Formulário</h3>
+<div class="page">
 
-        <h4>Compatibilidade (atributo web-copilot)</h4>
+<h1>Web Copilot — laboratório de campos</h1>
+<p class="lead">
+    Cada bloco exercita um caminho diferente de detecção. Abra com
+    <code>?selftest=1</code> na URL para rodar a verificação automática sem precisar da extensão instalada.
+</p>
 
-        <label for="">Nome de usuário</label><br>
-        <input type="text" web-copilot="userName">
+<pre id="wc-report"></pre>
 
-        <br><br>
+<form>
 
-        <label for="">Telefone</label><br>
-        <input type="text" web-copilot="telefone">
-
-        <br><br>
-
-        <label for="">CPF</label><br>
-        <input type="text" web-copilot="cpf">
-
-        <br><br>
-
-        <label for="">CEP</label><br>
-        <input type="text" web-copilot="cep">
-
-        <h4>Detecção automática (cadastro real, sem atributo)</h4>
-
-        <label for="fullName">Nome completo</label><br>
-        <input type="text" id="fullName" name="fullName" placeholder="Digite seu nome completo">
-
-        <br><br>
-
-        <label for="email">E-mail</label><br>
-        <input type="email" id="email" name="email" placeholder="seu@email.com">
-
-        <br><br>
-
-        <label for="password">Senha</label><br>
-        <input type="password" id="password" name="password" placeholder="Crie uma senha">
-
-        <br><br>
-
-        <label for="cnpj">CNPJ</label><br>
-        <input type="text" id="cnpj" name="cnpj" placeholder="00.000.000/0000-00">
-
-        <br><br>
-
-        <label for="documento">CPF/CNPJ</label><br>
-        <input type="text" id="documento" name="documento">
-
-        <br><br>
-
-        <div>
-            <span>Documento (CPF ou CNPJ)</span><br>
-            <input type="text" id="doc2" name="doc2">
-        </div>
-
-        <br><br>
-
-        <label for="razaoSocial">Razão Social</label><br>
-        <input type="text" id="razaoSocial" name="razaoSocial">
-
-        <br><br>
-
-        <label for="rua">Endereço</label><br>
-        <input type="text" id="rua" name="rua" placeholder="Rua / Avenida">
-
-        <br><br>
-
-        <label for="numero">Número</label><br>
-        <input type="text" id="numero" name="numero">
-
-        <br><br>
-
-        <label for="complemento">Complemento</label><br>
-        <input type="text" id="complemento" name="complemento">
-
-        <br><br>
-
-        <label for="bairro">Bairro</label><br>
-        <input type="text" id="bairro" name="bairro">
-
-        <br><br>
-
-        <label for="cidade">Cidade</label><br>
-        <input type="text" id="cidade" name="cidade">
-
-        <br><br>
-
-        <label for="estado">Estado</label><br>
-        <select id="estado" name="estado">
-            <option value="">Selecione</option>
-            <option value="SP">SP</option>
-            <option value="RJ">RJ</option>
-            <option value="MG">MG</option>
-            <option value="PR">PR</option>
-            <option value="RS">RS</option>
-            <option value="BA">BA</option>
-            <option value="CE">CE</option>
-            <option value="PE">PE</option>
-            <option value="DF">DF</option>
-            <option value="AM">AM</option>
-            <option value="GO">GO</option>
-            <option value="SC">SC</option>
-        </select>
-
-        <br><br>
-
-        <label for="dataNascimento">Data de nascimento</label><br>
-        <input type="date" id="dataNascimento" name="dataNascimento">
-
-        <br><br>
-
-        <label for="idade">Idade</label><br>
-        <input type="text" id="idade" name="idade">
-
-        <div class="checkbox-row">
-            <input type="checkbox" id="termos" name="termos">
-            <label for="termos">Li e aceito os termos de uso e a política de privacidade</label>
-        </div>
-
-        <button>Cadastrar</button>
-
+<fieldset>
+    <legend>1 · Pessoa física</legend>
+    <div class="grid">
+        <div class="f"><label for="nomeCompleto">Nome completo</label><input id="nomeCompleto" name="nomeCompleto" placeholder="Digite seu nome"></div>
+        <div class="f"><label for="nomeSocial">Nome social</label><input id="nomeSocial" name="nomeSocial"></div>
+        <div class="f"><label for="nomeMae">Nome da mãe</label><input id="nomeMae" name="nomeMae"></div>
+        <div class="f"><label for="email">E-mail</label><input type="email" id="email" name="email" placeholder="voce@exemplo.com"></div>
+        <div class="f"><label for="emailConf">Confirme o e-mail</label><input type="email" id="emailConf" name="emailConf"></div>
+        <div class="f"><label for="senha">Senha</label><input type="password" id="senha" name="senha"></div>
+        <div class="f"><label for="senhaConf">Confirmar senha</label><input type="password" id="senhaConf" name="senhaConf"></div>
+        <div class="f"><label for="nascimento">Data de nascimento</label><input type="date" id="nascimento" name="nascimento"></div>
+        <div class="f"><label for="idade">Idade</label><input type="number" id="idade" name="idade"></div>
+        <div class="f"><label for="celular">Celular</label><input type="tel" id="celular" name="celular" placeholder="(00) 00000-0000"></div>
+        <div class="f"><label for="fixo">Telefone fixo</label><input type="tel" id="fixo" name="fixo"></div>
+        <div class="f"><label for="naturalidade">Naturalidade</label><input id="naturalidade" name="naturalidade"></div>
     </div>
+</fieldset>
+
+<fieldset>
+    <legend>2 · Documentos</legend>
+    <div class="grid">
+        <div class="f"><label for="cpf">CPF</label><input id="cpf" name="cpf" maxlength="14"></div>
+        <div class="f"><label for="rg">RG</label><input id="rg" name="rg"></div>
+        <div class="f"><label for="orgaoEmissor">Órgão emissor</label><input id="orgaoEmissor" name="orgaoEmissor"></div>
+        <div class="f"><label for="cnh">CNH</label><input id="cnh" name="cnh"></div>
+        <div class="f"><label for="catCnh">Categoria da CNH</label><input id="catCnh" name="catCnh"></div>
+        <div class="f"><label for="pis">PIS/PASEP</label><input id="pis" name="pis"></div>
+        <div class="f"><label for="cns">Cartão SUS</label><input id="cns" name="cns"></div>
+        <div class="f"><label for="titulo">Título de eleitor</label><input id="titulo" name="titulo"></div>
+        <div class="f"><label for="passaporte">Passaporte</label><input id="passaporte" name="passaporte"></div>
+        <div class="f"><label for="processo">Número do processo</label><input id="processo" name="processo"></div>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>3 · Endereço</legend>
+    <div class="grid">
+        <div class="f"><label for="cep">CEP</label><input id="cep" name="cep" maxlength="9"></div>
+        <div class="f"><label for="logradouro">Logradouro</label><input id="logradouro" name="logradouro"></div>
+        <div class="f"><label for="numero">Número</label><input id="numero" name="numero"></div>
+        <div class="f"><label for="complemento">Complemento</label><input id="complemento" name="complemento"></div>
+        <div class="f"><label for="bairro">Bairro</label><input id="bairro" name="bairro"></div>
+        <div class="f"><label for="cidade">Cidade</label><input id="cidade" name="cidade"></div>
+        <div class="f"><label for="uf">UF</label>
+            <select id="uf" name="uf">
+                <option value="">Selecione</option>
+                <option>AC</option><option>AL</option><option>AM</option><option>BA</option><option>CE</option>
+                <option>DF</option><option>ES</option><option>GO</option><option>MG</option><option>PA</option>
+                <option>PE</option><option>PR</option><option>RJ</option><option>RN</option><option>RS</option>
+                <option>SC</option><option>SP</option><option>TO</option>
+            </select>
+        </div>
+        <div class="f"><label for="pais">País</label><input id="pais" name="pais"></div>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>4 · Pessoa jurídica</legend>
+    <div class="grid">
+        <div class="f"><label for="razaoSocial">Razão social</label><input id="razaoSocial" name="razaoSocial"></div>
+        <div class="f"><label for="fantasia">Nome fantasia</label><input id="fantasia" name="fantasia"></div>
+        <div class="f"><label for="cnpj">CNPJ</label><input id="cnpj" name="cnpj"></div>
+        <div class="f"><label for="documento">CPF/CNPJ</label><input id="documento" name="documento"></div>
+        <div class="f"><label for="ie">Inscrição estadual</label><input id="ie" name="ie"></div>
+        <div class="f"><label for="im">Inscrição municipal</label><input id="im" name="im"></div>
+        <div class="f"><label for="cargo">Cargo</label><input id="cargo" name="cargo"></div>
+        <div class="f"><label for="setor">Departamento</label><input id="setor" name="setor"></div>
+        <div class="f"><label for="salario">Salário</label><input id="salario" name="salario"></div>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>5 · Pagamento</legend>
+    <div class="grid">
+        <div class="f"><label for="numCartao">Número do cartão</label><input id="numCartao" name="numCartao"></div>
+        <div class="f"><label for="titularCartao">Nome impresso no cartão</label><input id="titularCartao" name="titularCartao"></div>
+        <div class="f"><label for="validade">Validade (MM/AA)</label><input id="validade" name="validade" maxlength="5"></div>
+        <div class="f"><label for="cvv">CVV</label><input id="cvv" name="cvv" maxlength="4"></div>
+        <div class="f"><label for="bandeira">Bandeira</label>
+            <select id="bandeira" name="bandeira">
+                <option value="">Selecione</option>
+                <option>Visa</option><option>Mastercard</option><option>Elo</option>
+                <option>American Express</option><option>Hipercard</option><option>Diners Club</option>
+            </select>
+        </div>
+        <div class="f"><label for="pix">Chave PIX</label><input id="pix" name="pix"></div>
+        <div class="f"><label for="agencia">Agência</label><input id="agencia" name="agencia"></div>
+        <div class="f"><label for="conta">Conta corrente</label><input id="conta" name="conta"></div>
+        <div class="f"><label for="boleto">Linha digitável</label><input id="boleto" name="boleto"></div>
+        <div class="f"><label for="valor">Valor</label><input id="valor" name="valor"></div>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>6 · Veículo</legend>
+    <div class="grid">
+        <div class="f"><label for="placa">Placa</label><input id="placa" name="placa" maxlength="8"></div>
+        <div class="f"><label for="renavam">RENAVAM</label><input id="renavam" name="renavam"></div>
+        <div class="f"><label for="chassi">Chassi</label><input id="chassi" name="chassi" maxlength="17"></div>
+        <div class="f"><label for="marcaVeiculo">Marca do veículo</label><input id="marcaVeiculo" name="marcaVeiculo"></div>
+        <div class="f"><label for="modelo">Modelo</label><input id="modelo" name="modelo"></div>
+        <div class="f"><label for="anoVeiculo">Ano de fabricação</label><input id="anoVeiculo" name="anoVeiculo"></div>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>7 · Atributo autocomplete (padrão WHATWG)</legend>
+    <div class="grid">
+        <div class="f"><label for="ac1">given-name</label><input id="ac1" autocomplete="given-name"></div>
+        <div class="f"><label for="ac2">family-name</label><input id="ac2" autocomplete="family-name"></div>
+        <div class="f"><label for="ac3">shipping postal-code</label><input id="ac3" autocomplete="shipping postal-code"></div>
+        <div class="f"><label for="ac4">cc-number</label><input id="ac4" autocomplete="cc-number"></div>
+        <div class="f"><label for="ac5">cc-csc</label><input id="ac5" autocomplete="cc-csc"></div>
+        <div class="f"><label for="ac6">organization</label><input id="ac6" autocomplete="organization"></div>
+        <div class="f"><label for="ac7">bday</label><input id="ac7" autocomplete="bday" type="date"></div>
+        <div class="f"><label for="ac8">one-time-code</label><input id="ac8" autocomplete="one-time-code"></div>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>8 · Sem &lt;label for&gt; — jeitos de React, Vue e Material</legend>
+    <div class="grid">
+        <div class="f"><span class="floating">CPF do titular</span><input name="f1"></div>
+        <div class="f"><span class="floating">Telefone de contato</span><input name="f2"></div>
+        <div class="f"><input name="f3" aria-label="Endereço de e-mail"></div>
+        <div class="f"><span id="lbl4" class="floating">Data de nascimento</span><input name="f4" aria-labelledby="lbl4"></div>
+        <div class="f"><input name="f5" data-testid="campo-cep" placeholder="00000-000"></div>
+        <div class="f"><input name="f6" formcontrolname="nomeCompleto"></div>
+        <div class="f"><label>Cidade<input name="f7"></label></div>
+        <div class="f"><span class="floating">Razão social da empresa</span><input name="f8"></div>
+    </div>
+    <p class="note">Aqui não existe <code>&lt;label for&gt;</code>: a detecção precisa achar o rótulo pelo texto vizinho, aria, data-* ou pelo label que embrulha o campo.</p>
+</fieldset>
+
+<fieldset>
+    <legend>9 · Campos com máscara declarada</legend>
+    <div class="grid">
+        <div class="f"><label for="m1">CPF (data-mask)</label><input id="m1" name="cpfMask" data-mask="000.000.000-00" placeholder="___.___.___-__"></div>
+        <div class="f"><label for="m2">Telefone (classe .mask)</label><input id="m2" name="telMask" class="form-control mask"></div>
+        <div class="f"><label for="m3">CEP (v-mask)</label><input id="m3" name="cepMask" v-mask="#####-###"></div>
+    </div>
+    <p class="note">Campos com máscara declarada recebem só os dígitos, digitados tecla a tecla, para a lib formatar sozinha.</p>
+</fieldset>
+
+<fieldset>
+    <legend>10 · Seleções, marcações e texto livre</legend>
+    <div class="grid">
+        <div class="f"><label for="genero">Gênero</label>
+            <select id="genero" name="genero">
+                <option value="">Selecione</option><option>Masculino</option><option>Feminino</option><option>Outro</option>
+            </select>
+        </div>
+        <div class="f"><label for="estadoCivil">Estado civil</label>
+            <select id="estadoCivil" name="estadoCivil">
+                <option value="">Selecione</option><option>Solteiro(a)</option><option>Casado(a)</option>
+                <option>Divorciado(a)</option><option>Viúvo(a)</option><option>União estável</option>
+            </select>
+        </div>
+        <div class="f"><label for="escolaridade">Escolaridade</label>
+            <select id="escolaridade" name="escolaridade">
+                <option value="">Selecione</option><option>Ensino Fundamental</option><option>Ensino Médio</option>
+                <option>Ensino Superior</option><option>Pós-graduação</option><option>Mestrado</option><option>Doutorado</option>
+            </select>
+        </div>
+        <div class="f"><label for="sangue">Tipo sanguíneo</label>
+            <select id="sangue" name="sangue">
+                <option value="">Selecione</option><option>A+</option><option>A-</option><option>B+</option>
+                <option>O+</option><option>O-</option><option>AB+</option>
+            </select>
+        </div>
+        <div class="f"><label for="plano">Plano contratado (sem semântica)</label>
+            <select id="plano" name="plano">
+                <option value="">Escolha uma opção</option><option value="basico">Básico</option>
+                <option value="pro">Pro</option><option value="enterprise">Enterprise</option>
+            </select>
+        </div>
+    </div>
+
+    <div class="f" style="margin-top:14px">
+        <span class="floating">Sexo</span>
+        <div class="radios">
+            <label class="check"><input type="radio" name="sexo" value="M"> Masculino</label>
+            <label class="check"><input type="radio" name="sexo" value="F"> Feminino</label>
+            <label class="check"><input type="radio" name="sexo" value="O"> Prefiro não informar</label>
+        </div>
+    </div>
+
+    <div class="check" style="margin-top:12px">
+        <input type="checkbox" id="termos" name="termos">
+        <label for="termos">Li e aceito os termos de uso e a política de privacidade</label>
+    </div>
+    <div class="check">
+        <input type="checkbox" id="news" name="news">
+        <label for="news">Quero receber novidades e promoções por e-mail</label>
+    </div>
+
+    <div class="f" style="margin-top:14px">
+        <label for="obs">Observações</label>
+        <textarea id="obs" name="obs"></textarea>
+    </div>
+    <div class="f" style="margin-top:12px">
+        <span class="floating">Descrição (contenteditable)</span>
+        <div class="editable" contenteditable="true" data-field="descricao"></div>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>11 · Tipos nativos do HTML5</legend>
+    <div class="grid">
+        <div class="f"><label for="h1">month</label><input type="month" id="h1" name="mesRef"></div>
+        <div class="f"><label for="h2">week</label><input type="week" id="h2" name="semana"></div>
+        <div class="f"><label for="h3">time</label><input type="time" id="h3" name="horario"></div>
+        <div class="f"><label for="h4">datetime-local</label><input type="datetime-local" id="h4" name="dataHora"></div>
+        <div class="f"><label for="h5">url</label><input type="url" id="h5" name="site"></div>
+        <div class="f"><label for="h6">color</label><input type="color" id="h6" name="cor"></div>
+        <div class="f"><label for="h7">range</label><input type="range" id="h7" name="nota" min="0" max="10"></div>
+        <div class="f"><label for="h8">number (quantidade)</label><input type="number" id="h8" name="quantidade"></div>
+    </div>
+</fieldset>
+
+<fieldset class="warn">
+    <legend>12 · Não devem ser preenchidos</legend>
+    <div class="grid">
+        <div class="f"><label for="busca">Buscar no site</label><input id="busca" name="busca" type="search"></div>
+        <div class="f"><label for="cupom">Cupom de desconto</label><input id="cupom" name="cupom"></div>
+        <div class="f"><label for="filtro">Filtro por período</label><input id="filtro" name="filtro"></div>
+        <div class="f" style="display:none"><label for="hp">Deixe em branco</label><input id="hp" name="honeypot_email"></div>
+        <div class="f"><label for="ro">Somente leitura</label><input id="ro" name="protocoloGerado" readonly value="não mexer"></div>
+        <div class="f"><label for="dis">Desabilitado</label><input id="dis" name="cpfBloqueado" disabled></div>
+    </div>
+    <p class="note">Busca, cupom e filtro são vetados por regra; o honeypot está oculto; readonly e disabled são ignorados.</p>
+</fieldset>
+
+<fieldset>
+    <legend>13 · Compatibilidade com o atributo web-copilot</legend>
+    <div class="grid">
+        <div class="f"><label>userName (legado)</label><input web-copilot="userName"></div>
+        <div class="f"><label>telefone (legado)</label><input web-copilot="telefone"></div>
+        <div class="f"><label>documento (legado)</label><input web-copilot="documento"></div>
+        <div class="f"><label>data-wc-type="pixKey"</label><input data-wc-type="pixKey"></div>
+        <div class="f"><label>data-wc-type="imei"</label><input data-wc-type="imei"></div>
+    </div>
+</fieldset>
+
+<fieldset>
+    <legend>14 · Web component (shadow DOM)</legend>
+    <div id="shadow-host"></div>
+    <p class="note">O campo abaixo mora dentro de um shadow root aberto — a coleta precisa atravessar a fronteira.</p>
+</fieldset>
+
+<button type="submit">Cadastrar</button>
+</form>
+</div>
+
+<script>
+// Campo dentro de shadow DOM: web components escondem os inputs do
+// querySelectorAll comum.
+(function () {
+    var host = document.getElementById("shadow-host");
+    var shadow = host.attachShadow({ mode: "open" });
+    shadow.innerHTML =
+        '<style>.f{display:flex;flex-direction:column;gap:4px;max-width:260px}' +
+        'label{font:600 12px system-ui;color:#55555e}' +
+        'input{border:1px solid #ccccd4;border-radius:7px;padding:8px 10px;font-size:13px}</style>' +
+        '<div class="f"><label for="s1">CPF (dentro do shadow DOM)</label><input id="s1" name="cpfShadow"></div>';
+})();
+</script>
+
+<!-- Verificação automática: só carrega os módulos quando pedida por ?selftest=1 -->
+<script>
+(function () {
+    if (!/[?&]selftest=1/.test(location.search)) return;
+    var files = ["wc-core", "wc-datasets", "wc-docs", "wc-persona", "wc-values", "wc-detect", "wc-fill"];
+    var pending = files.length;
+    files.forEach(function (name, index) {
+        var tag = document.createElement("script");
+        tag.src = "scripts/" + name + ".js";
+        tag.async = false;
+        tag.onload = function () { if (--pending === 0) runSelfTest(); };
+        document.head.appendChild(tag);
+    });
+
+    function runSelfTest() {
+        var WC = window.WC;
+        var report = document.getElementById("wc-report");
+        var persona = WC.buildPersona({ seed: "selftest", locale: "BR" });
+        var rnd = new WC.Random("selftest:fill");
+        var options = { mode: "valid", fillUnknownSelects: true, checkUnknownBoxes: false, fillHidden: false, humanTyping: false };
+
+        var lines = [];
+        var filled = 0, unknown = 0, skipped = 0, considered = 0;
+        var unknownList = [];
+
+        WC.dom.collectFields(document).forEach(function (element) {
+            if (!WC.dom.isFillable(element, options)) return;
+            considered++;
+
+            var attr = element.getAttribute("web-copilot") || element.getAttribute("data-wc-type");
+            var aliases = { userName: "fullName", telefone: "phone", documento: "cpfCnpj" };
+            var result = attr
+                ? { type: aliases[attr] || attr, source: "atributo" }
+                : WC.detect.classify(WC.dom.extractSignals(element));
+
+            var name = element.name || element.id || element.getAttribute("data-field") || "(sem nome)";
+
+            if (result.skip) { skipped++; lines.push(pad(name) + "VETADO"); return; }
+            if (!result.type) { unknown++; unknownList.push(name); lines.push(pad(name) + "??? não reconhecido"); return; }
+
+            var applied = WC.dom.fillField(element, result.type, persona, rnd, options);
+            if (applied === null || applied === undefined) { lines.push(pad(name) + result.type + " -> (não preencheu)"); return; }
+            filled++;
+            lines.push(pad(name) + result.type + " = " + applied);
+        });
+
+        var checks = [
+            ["CPF gerado é válido", WC.validate.cpf(persona.cpf)],
+            ["CNPJ gerado é válido", WC.validate.cnpj(persona.cnpj)],
+            ["campo #cpf recebeu CPF válido", WC.validate.cpf(document.getElementById("cpf").value)],
+            ["campo #cnpj recebeu CNPJ válido", WC.validate.cnpj(document.getElementById("cnpj").value)],
+            ["campo #cnh recebeu CNH válida", WC.validate.cnh(document.getElementById("cnh").value)],
+            ["campo #pis recebeu PIS válido", WC.validate.pis(document.getElementById("pis").value)],
+            ["campo #cns recebeu CNS válido", WC.validate.cns(document.getElementById("cns").value)],
+            ["campo #titulo recebeu título válido", WC.validate.titulo(document.getElementById("titulo").value)],
+            ["campo #renavam recebeu RENAVAM válido", WC.validate.renavam(document.getElementById("renavam").value)],
+            ["campo #chassi recebeu chassi válido", WC.validate.chassi(document.getElementById("chassi").value)],
+            ["campo #numCartao passa em Luhn", WC.validate.luhn(document.getElementById("numCartao").value)],
+            ["campo #boleto tem linha digitável válida", WC.validate.boletoLine(document.getElementById("boleto").value)],
+            ["campo #processo é CNJ válido", WC.validate.processoCNJ(document.getElementById("processo").value)],
+            ["senha e confirmação batem", document.getElementById("senha").value === document.getElementById("senhaConf").value],
+            ["e-mail e confirmação batem", document.getElementById("email").value === document.getElementById("emailConf").value],
+            ["UF do select bate com a cidade", document.getElementById("uf").value === persona.address.state],
+            ["CEP começa com a região da cidade", document.getElementById("cep").value.indexOf(persona.address.zip.slice(0, 3)) === 0],
+            ["DDD do celular bate com a cidade", document.getElementById("celular").value.indexOf(persona.address.areaCode) === 1],
+            ["busca foi vetada", document.getElementById("busca").value === ""],
+            ["cupom foi vetado", document.getElementById("cupom").value === ""],
+            ["honeypot oculto não foi tocado", document.getElementById("hp").value === ""],
+            ["readonly preservado", document.getElementById("ro").value === "não mexer"],
+            ["termos marcado", document.getElementById("termos").checked === true],
+            ["campo com máscara recebeu só dígitos", /^\d+$/.test(document.getElementById("m1").value)],
+            ["input type=date recebeu ISO", /^\d{4}-\d{2}-\d{2}$/.test(document.getElementById("nascimento").value)],
+            ["input type=number recebeu número puro", /^-?\d+(\.\d+)?$/.test(document.getElementById("idade").value)],
+            ["shadow DOM foi preenchido", !!document.getElementById("shadow-host").shadowRoot.getElementById("s1").value],
+            ["contenteditable foi preenchido", document.querySelector("[contenteditable]").textContent.length > 0],
+            ["um rádio de sexo foi marcado", !!document.querySelector('input[name=sexo]:checked')]
+        ];
+
+        var failed = checks.filter(function (c) { return !c[1]; });
+
+        report.className = "on";
+        report.textContent =
+            "WEB COPILOT SELFTEST\n" +
+            "====================\n" +
+            "campos considerados: " + considered + " | preenchidos: " + filled +
+            " | vetados: " + skipped + " | não reconhecidos: " + unknown + "\n" +
+            (unknownList.length ? "sem tipo: " + unknownList.join(", ") + "\n" : "") +
+            "\n" + lines.join("\n") +
+            "\n\nVERIFICAÇÕES\n" + checks.map(function (c) { return (c[1] ? "  ok  " : "FALHOU ") + c[0]; }).join("\n") +
+            "\n\nRESULTADO: " + (failed.length ? "FALHOU (" + failed.length + ")" : "TUDO OK") + "\n";
+    }
+
+    function pad(name) {
+        var out = String(name);
+        while (out.length < 24) out += " ";
+        return out + " -> ";
+    }
+})();
+</script>
 </body>
 </html>

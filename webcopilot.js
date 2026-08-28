@@ -1,309 +1,50 @@
+/**
+ * Web Copilot — content script principal.
+ *
+ * Junta as peças: lê as configurações, pega a persona compartilhada do
+ * service worker, classifica cada campo da página e preenche. Roda em todos
+ * os frames; só o frame de topo desenha o painel.
+ */
 (function () {
+  "use strict";
+
   if (window.__wcInjected) return;
   window.__wcInjected = true;
 
-  wcLog("webcopilot.js");
-  wcLog("running...");
+  var WC = window.WC;
+  var isTopFrame = window.top === window;
 
-  var lastContextTarget = null;
+  function wcLog(msg, extra) {
+    console.log("%c WC > %c" + msg, "color:#f6c231", "color:#c1c1c1", extra !== undefined ? extra : "");
+  }
+
+  var DEFAULTS = {
+    WC_autocomplete: false,
+    WC_show_suggestions: false,
+    WC_show_labels: true,
+    WC_highlight: true,
+    WC_hud: true,
+    WC_mode: "valid",
+    WC_human_typing: false,
+    WC_fill_unknown_selects: true,
+    WC_check_unknown_boxes: false,
+    WC_fill_hidden: false
+  };
+
+  var settings = Object.assign({}, DEFAULTS);
+  var persona = null;
+  var overrides = {};
   var observer = null;
+  var lastStats = { filled: 0, unknown: 0, fields: 0, details: [], unknownFields: [] };
+  var lastContextTarget = null;
+  var typeCache = new WeakMap();
+  var domain = location.hostname;
 
-  // ---------------------------------------------------------------------
-  // Dados de apoio (100% locais, sem dependências externas)
-  // ---------------------------------------------------------------------
+  // -------------------------------------------------------------------
+  // Cor de destaque: usa a cor do próprio site em vez de uma cor fixa
+  // -------------------------------------------------------------------
 
-  var BR_FIRST_NAMES = ["João", "Maria", "José", "Ana", "Pedro", "Paula", "Lucas", "Mariana", "Carlos", "Fernanda", "Rafael", "Juliana", "Bruno", "Camila", "Gabriel", "Beatriz", "Felipe", "Larissa", "Rodrigo", "Amanda"];
-  var BR_LAST_NAMES = ["Silva", "Santos", "Oliveira", "Souza", "Rodrigues", "Ferreira", "Alves", "Pereira", "Lima", "Gomes", "Costa", "Ribeiro", "Martins", "Carvalho", "Almeida", "Barbosa"];
-  var BR_DDDS = ["11", "21", "31", "41", "47", "51", "61", "71", "81", "85", "91"];
-  var BR_LOCATIONS = [
-    { city: "São Paulo", state: "SP" },
-    { city: "Rio de Janeiro", state: "RJ" },
-    { city: "Belo Horizonte", state: "MG" },
-    { city: "Curitiba", state: "PR" },
-    { city: "Porto Alegre", state: "RS" },
-    { city: "Salvador", state: "BA" },
-    { city: "Fortaleza", state: "CE" },
-    { city: "Recife", state: "PE" },
-    { city: "Brasília", state: "DF" },
-    { city: "Manaus", state: "AM" },
-    { city: "Goiânia", state: "GO" },
-    { city: "Florianópolis", state: "SC" }
-  ];
-  var COMPANY_SUFFIXES = ["Comércio", "Serviços", "Tecnologia", "Indústria", "Soluções", "Consultoria"];
-  var COMPANY_LEGAL = ["LTDA", "ME", "EIRELI", "S.A."];
-  var COMPLEMENTS = ["Apto 101", "Casa 2", "Bloco B", "Fundos", "Sala 4", ""];
-
-  // Alias de compatibilidade com o atributo antigo `web-copilot="tipo"`
-  var LEGACY_ALIASES = {
-    userName: "fullName",
-    userNames: "fullName",
-    telefone: "phone",
-    telefones: "phone",
-    cep: "cep",
-    ceps: "cep",
-    cpf: "cpf",
-    cpfs: "cpf",
-    documento: "cpfCnpj",
-    documentos: "cpfCnpj"
-  };
-
-  // Regras de detecção automática por nome/id/placeholder/autocomplete/label/type.
-  // Ordem importa: regras mais específicas primeiro. O combo cpf/cnpj precisa vir
-  // antes das regras isoladas de cnpj e cpf, senão "CPF/CNPJ" cai sempre em cnpj
-  // (a regra /cnpj/ já dá match no final da string "cpf/cnpj").
-  var DETECTION_RULES = [
-    { type: "email", re: /e-?mail/ },
-    { type: "password", re: /senha|password|\bpwd\b/ },
-    { type: "cpfCnpj", re: /cpf\s*[\/\-_]?\s*cnpj|cnpj\s*[\/\-_]?\s*cpf|cpf\s+ou\s+cnpj|cnpj\s+ou\s+cpf/ },
-    { type: "cnpj", re: /cnpj/ },
-    { type: "cpf", re: /\bcpf\b/ },
-    { type: "companyName", re: /razao ?social|nome ?fantasia/ },
-    { type: "cep", re: /\bcep\b/ },
-    { type: "phone", re: /telefone|celular|\bfone\b|whatsapp|\btel\b/ },
-    { type: "age", re: /\bidade\b|\bage\b/ },
-    { type: "birthday", re: /nascimento|data ?nasc|birthdate|\bdob\b/ },
-    { type: "neighborhood", re: /\bbairro\b/ },
-    { type: "complement", re: /complemento/ },
-    { type: "streetNumber", re: /\bnumero\b|\bnum\b/ },
-    { type: "street", re: /endereco|logradouro|\brua\b|\bavenida\b/ },
-    { type: "state", re: /\buf\b|\bestado\b/ },
-    { type: "city", re: /\bcidade\b|municipio/ },
-    { type: "fullName", re: /nome ?completo|full ?name/ },
-    { type: "firstName", re: /primeiro ?nome|first ?name|\bfname\b/ },
-    { type: "lastName", re: /sobrenome|last ?name|\blname\b/ },
-    { type: "name", re: /\bnome\b|\bname\b/ },
-    { type: "terms", re: /aceito|concordo|\btermos\b|privacidade/ }
-  ];
-
-  var FIELD_LABELS = {
-    email: "e-mail de teste",
-    password: "senha de teste",
-    cpfCnpj: "CPF/CNPJ de teste",
-    cnpj: "CNPJ de teste",
-    cpf: "CPF de teste",
-    companyName: "razão social de teste",
-    cep: "CEP de teste",
-    phone: "telefone de teste",
-    age: "idade de teste",
-    birthday: "data de nascimento de teste",
-    neighborhood: "bairro de teste",
-    complement: "complemento de teste",
-    streetNumber: "número de teste",
-    street: "endereço de teste",
-    state: "estado de teste",
-    city: "cidade de teste",
-    fullName: "nome completo de teste",
-    firstName: "primeiro nome de teste",
-    lastName: "sobrenome de teste",
-    name: "nome de teste",
-    terms: "aceite de termos"
-  };
-
-  // ---------------------------------------------------------------------
-  // Geradores de dado fake (Chance.js + pequenos geradores locais BR)
-  // ---------------------------------------------------------------------
-
-  function pad2(n) {
-    return String(n).length < 2 ? "0" + n : String(n);
-  }
-
-  function toISODate(date) {
-    return date.getFullYear() + "-" + pad2(date.getMonth() + 1) + "-" + pad2(date.getDate());
-  }
-
-  function toBRDate(date) {
-    return pad2(date.getDate()) + "/" + pad2(date.getMonth() + 1) + "/" + date.getFullYear();
-  }
-
-  function calculateAge(birthDate) {
-    var today = new Date();
-    var age = today.getFullYear() - birthDate.getFullYear();
-    var m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-    return age;
-  }
-
-  function generatePhone() {
-    var ddd = chance.pickone(BR_DDDS);
-    var isMobile = chance.bool();
-    if (isMobile) {
-      return "(" + ddd + ") 9" + chance.string({ pool: "0123456789", length: 3 }) + "-" + chance.string({ pool: "0123456789", length: 4 });
-    }
-    var firstDigit = chance.pickone(["2", "3", "4"]);
-    return "(" + ddd + ") " + firstDigit + chance.string({ pool: "0123456789", length: 3 }) + "-" + chance.string({ pool: "0123456789", length: 4 });
-  }
-
-  function generateCEP() {
-    return chance.string({ pool: "0123456789", length: 5 }) + "-" + chance.string({ pool: "0123456789", length: 3 });
-  }
-
-  function generatePassword() {
-    var upper = chance.character({ pool: "ABCDEFGHJKLMNPQRSTUVWXYZ" });
-    var lower = chance.string({ length: 6, pool: "abcdefghjkmnpqrstuvwxyz" });
-    var digits = chance.string({ length: 3, pool: "0123456789" });
-    var symbol = chance.pickone(["!", "@", "#", "$", "%", "*", "?"]);
-    return chance.shuffle((upper + lower + digits + symbol).split("")).join("");
-  }
-
-  function generateCompanyName() {
-    return chance.capitalize(chance.word({ syllables: 3 })) + " " + chance.pickone(COMPANY_SUFFIXES) + " " + chance.pickone(COMPANY_LEGAL);
-  }
-
-  function generateEmail(profile) {
-    var local = (profile.firstName + "." + profile.lastName).toLowerCase().replace(/[^a-z.]/g, "");
-    // Domínio ".invalid" é reservado por RFC 2606: nunca resolve nem entrega e-mail de
-    // verdade, então o preenchimento automático não corre o risco de mandar e-mails
-    // de verificação/confirmação para uma caixa real de outra pessoa.
-    return local + chance.natural({ min: 1, max: 999 }) + "@webcopilot.invalid";
-  }
-
-  function createProfile() {
-    var firstName = chance.pickone(BR_FIRST_NAMES);
-    var lastName = chance.pickone(BR_LAST_NAMES);
-    var birthdayDate = chance.birthday({ type: "adult" });
-    return {
-      firstName: firstName,
-      lastName: lastName,
-      fullName: firstName + " " + lastName,
-      location: chance.pickone(BR_LOCATIONS),
-      birthdayDate: birthdayDate,
-      age: calculateAge(birthdayDate)
-    };
-  }
-
-  // ---------------------------------------------------------------------
-  // Compatibilidade com inputs controlados (React/Vue/Angular)
-  // ---------------------------------------------------------------------
-
-  // React (e via inputValueTracking) substitui o setter de `value`/`checked` na
-  // própria instância do elemento para rastrear mudanças "reais". Se a gente usar
-  // `element.value = x`, cai nesse setter substituído e o React acha que nada
-  // mudou (não dispara onChange). O truque é chamar o setter NATIVO do protótipo
-  // diretamente, ignorando o override da instância, e só então disparar o evento.
-  function setNativeValue(element, value) {
-    var prototype = Object.getPrototypeOf(element);
-    var descriptor = Object.getOwnPropertyDescriptor(prototype, "value");
-
-    if (descriptor && descriptor.set) {
-      descriptor.set.call(element, value);
-    } else {
-      element.value = value;
-    }
-
-    element.dispatchEvent(new Event("input", { bubbles: true }));
-    element.dispatchEvent(new Event("change", { bubbles: true }));
-    element.dispatchEvent(new FocusEvent("blur"));
-    element.dispatchEvent(new Event("focusout", { bubbles: true }));
-  }
-
-  function setNativeChecked(element, checked) {
-    var prototype = Object.getPrototypeOf(element);
-    var descriptor = Object.getOwnPropertyDescriptor(prototype, "checked");
-
-    if (descriptor && descriptor.set) {
-      descriptor.set.call(element, checked);
-    } else {
-      element.checked = checked;
-    }
-
-    element.dispatchEvent(new Event("click", { bubbles: true }));
-    element.dispatchEvent(new Event("change", { bubbles: true }));
-  }
-
-  // ---------------------------------------------------------------------
-  // Detecção do tipo de campo
-  // ---------------------------------------------------------------------
-
-  var COMBINING_MARKS_RE = new RegExp("[" + String.fromCharCode(0x0300) + "-" + String.fromCharCode(0x036f) + "]", "g");
-
-  function normalize(str) {
-    return str
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(COMBINING_MARKS_RE, "");
-  }
-
-  function getLabelText(element) {
-    if (element.labels && element.labels.length) {
-      return Array.prototype.map.call(element.labels, function (l) {
-        return l.textContent || "";
-      }).join(" ");
-    }
-    return "";
-  }
-
-  // Fallback para quando não há <label for> nem wrapping real (comum em
-  // componentes React/Vue com "floating label" solto em <span>/<div>): pega o
-  // texto do irmão anterior ou de outro filho curto no mesmo container.
-  function getNearbyText(element) {
-    var prev = element.previousElementSibling;
-    if (prev && /^(label|span|div|p|small|strong)$/i.test(prev.tagName)) {
-      var prevText = (prev.textContent || "").trim();
-      if (prevText && prevText.length < 60) return prevText;
-    }
-
-    var parent = element.parentElement;
-    if (!parent) return "";
-    for (var i = 0; i < parent.childNodes.length; i++) {
-      var node = parent.childNodes[i];
-      if (node === element) continue;
-      var text = (node.textContent || "").trim();
-      if (text && text.length < 60) return text;
-    }
-    return "";
-  }
-
-  function buildContext(element) {
-    var parts = [
-      element.name,
-      element.id,
-      element.getAttribute("placeholder"),
-      element.getAttribute("autocomplete"),
-      element.getAttribute("aria-label"),
-      element.getAttribute("title"),
-      element.getAttribute("pattern"),
-      element.getAttribute("inputmode"),
-      getLabelText(element)
-    ].filter(Boolean);
-
-    return normalize(parts.join(" "));
-  }
-
-  function matchDetectionRules(ctx) {
-    if (!ctx) return null;
-    for (var i = 0; i < DETECTION_RULES.length; i++) {
-      if (DETECTION_RULES[i].re.test(ctx)) return DETECTION_RULES[i].type;
-    }
-    return null;
-  }
-
-  function detectFieldType(element) {
-    var override = element.getAttribute("web-copilot");
-    if (override) {
-      return LEGACY_ALIASES[override] || override;
-    }
-
-    var type = matchDetectionRules(buildContext(element));
-    // name/id quase sempre existem (mesmo genéricos, tipo "doc2"), então o
-    // contexto principal raramente vem vazio. Só tenta o texto vizinho (label
-    // solto, sem <label for>) como segunda passada, depois que o principal falhou.
-    if (!type) type = matchDetectionRules(normalize(getNearbyText(element)));
-    if (type) return type;
-
-    switch (element.type) {
-      case "email": return "email";
-      case "tel": return "phone";
-      case "date": return "birthday";
-      case "password": return "password";
-      default: return null;
-    }
-  }
-
-  // ---------------------------------------------------------------------
-  // Cor de destaque: usa a cor principal do site em vez de uma cor fixa
-  // ---------------------------------------------------------------------
-
-  var ACCENT_VAR_NAMES = [
+  var ACCENT_VARS = [
     "--primary", "--primary-color", "--color-primary", "--brand-color", "--brand",
     "--accent-color", "--accent", "--main-color", "--theme-color",
     "--bs-primary", "--mdc-theme-primary", "--ion-color-primary", "--el-color-primary"
@@ -327,177 +68,262 @@
 
   function isUsableAccent(value) {
     if (!value) return false;
-    value = value.trim();
-    if (!value || value === "transparent" || value === "inherit" || value === "initial" || value === "none") return false;
-
+    value = String(value).trim();
+    if (!value || ["transparent", "inherit", "initial", "none"].indexOf(value) !== -1) return false;
     var rgb = colorToRgb(value);
     if (!rgb) return false;
-    // Perto do branco não dá pra ver como borda na maioria dos formulários.
-    if (rgb.r > 245 && rgb.g > 245 && rgb.b > 245) return false;
-    return true;
+    // Perto do branco não dá para enxergar como contorno na maioria dos temas.
+    return !(rgb.r > 245 && rgb.g > 245 && rgb.b > 245);
   }
 
-  function findSiteAccentColor() {
+  function findAccentColor() {
     var meta = document.querySelector('meta[name="theme-color"]');
     if (meta && isUsableAccent(meta.content)) return meta.content.trim();
 
     var rootStyle = getComputedStyle(document.documentElement);
-    for (var i = 0; i < ACCENT_VAR_NAMES.length; i++) {
-      var value = rootStyle.getPropertyValue(ACCENT_VAR_NAMES[i]);
+    for (var i = 0; i < ACCENT_VARS.length; i++) {
+      var value = rootStyle.getPropertyValue(ACCENT_VARS[i]);
       if (isUsableAccent(value)) return value.trim();
     }
 
-    var candidates = document.querySelectorAll(
-      'button[type="submit"], input[type="submit"], .btn-primary, .primary, a.button'
-    );
+    var candidates = document.querySelectorAll('button[type="submit"], input[type="submit"], .btn-primary, .primary, a.button');
     for (var j = 0; j < candidates.length; j++) {
       var bg = getComputedStyle(candidates[j]).backgroundColor;
       if (isUsableAccent(bg)) return bg;
     }
-
     return "#f6c231";
   }
 
-  function getSiteAccentColor() {
-    if (!window.__wcAccentColor) window.__wcAccentColor = findSiteAccentColor();
-    return window.__wcAccentColor;
+  function accentColor() {
+    if (!window.__wcAccent) window.__wcAccent = findAccentColor();
+    return window.__wcAccent;
   }
 
-  // ---------------------------------------------------------------------
-  // Preenchimento
-  // ---------------------------------------------------------------------
+  // -------------------------------------------------------------------
+  // Persona e configurações
+  // -------------------------------------------------------------------
 
-  function fillSelect(select, type, profile) {
-    var options = Array.prototype.filter.call(select.options, function (o) { return o.value !== ""; });
-    if (!options.length) return false;
-
-    var target = null;
-    if (type === "state") {
-      target = options.filter(function (o) {
-        var norm = normalize(o.textContent + " " + o.value);
-        return norm.indexOf(normalize(profile.location.state)) !== -1;
-      })[0];
-    }
-    if (!target) return false;
-
-    setNativeValue(select, target.value);
-    return true;
-  }
-
-  function fillElement(element, type, profile) {
-    if (element.disabled) return false;
-
-    if (element.type === "checkbox" || element.type === "radio") {
-      if (type === "terms" && !element.checked) {
-        setNativeChecked(element, true);
-        return true;
-      }
-      return false;
-    }
-
-    if (element.tagName === "SELECT") {
-      return fillSelect(element, type, profile);
-    }
-
-    if (element.readOnly) return false;
-
-    if (type === "birthday") {
-      var value = element.type === "date" ? toISODate(profile.birthdayDate) : toBRDate(profile.birthdayDate);
-      setNativeValue(element, value);
-      return true;
-    }
-
-    var generators = {
-      email: function () { return generateEmail(profile); },
-      password: generatePassword,
-      cpfCnpj: function () { return chance.bool() ? chance.cpf() : chance.cnpj(); },
-      cnpj: function () { return chance.cnpj(); },
-      cpf: function () { return chance.cpf(); },
-      companyName: generateCompanyName,
-      cep: generateCEP,
-      phone: generatePhone,
-      age: function () { return String(profile.age); },
-      neighborhood: function () { return chance.capitalize(chance.word({ syllables: 2 })); },
-      complement: function () { return chance.pickone(COMPLEMENTS); },
-      streetNumber: function () { return String(chance.natural({ min: 1, max: 2500 })); },
-      street: function () { return chance.street(); },
-      state: function () { return profile.location.state; },
-      city: function () { return profile.location.city; },
-      fullName: function () { return profile.fullName; },
-      firstName: function () { return profile.firstName; },
-      lastName: function () { return profile.lastName; },
-      name: function () { return profile.fullName; }
-    };
-
-    var generator = generators[type];
-    if (!generator) return false;
-
-    setNativeValue(element, generator());
-    return true;
-  }
-
-  // Marca visualmente o campo com a cor de destaque, garantindo que a borda
-  // apareça mesmo em sites que zeram `border` por padrão (ex: Tailwind reset).
-  function highlightElement(element, color) {
-    var computed = getComputedStyle(element);
-    if (parseFloat(computed.borderWidth) === 0 || computed.borderStyle === "none") {
-      element.style.borderStyle = "solid";
-      element.style.borderWidth = "2px";
-    }
-    element.style.borderColor = color;
-  }
-
-  // Insere (ou reaproveita) o textinho "Atualizado pelo WebCopilot" logo
-  // abaixo do campo preenchido.
-  function addFilledHint(element, color, message) {
-    var next = element.nextElementSibling;
-    if (next && next.classList && next.classList.contains("wc-hint")) {
-      next.textContent = message;
-      next.style.color = color;
-      return;
-    }
-
-    var hint = document.createElement("small");
-    hint.className = "wc-hint";
-    hint.textContent = message;
-    hint.style.cssText =
-      "display:block;flex-basis:100%;font-size:11px;line-height:1.3;margin-top:2px;" +
-      "font-family:-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;color:" + color + ";";
-    element.insertAdjacentElement("afterend", hint);
-  }
-
-  function fillForm(showSuggestions, force) {
-    var profile = createProfile();
-    var fields = document.querySelectorAll("input, select, textarea");
-    var filledCount = 0;
-    var accentColor = getSiteAccentColor();
-
-    fields.forEach(function (element) {
-      if (["submit", "button", "reset", "hidden", "file", "image"].indexOf(element.type) !== -1) return;
-      if (force) delete element.dataset.wcFilled;
-      if (element.dataset.wcFilled === "1") return;
-
-      var type = detectFieldType(element);
-      if (!type) return;
-
-      if (showSuggestions) {
-        element.title = "Web Copilot: sugestão de " + (FIELD_LABELS[type] || type);
-      }
-
-      if (fillElement(element, type, profile)) {
-        element.dataset.wcFilled = "1";
-        highlightElement(element, accentColor);
-
-        var isCheckable = element.type === "checkbox" || element.type === "radio";
-        addFilledHint(element, accentColor, isCheckable ? "Marcado pelo WebCopilot" : "Atualizado pelo WebCopilot");
-
-        filledCount++;
+  function ask(message) {
+    return new Promise(function (resolve) {
+      try {
+        chrome.runtime.sendMessage(message, function (response) {
+          if (chrome.runtime.lastError) return resolve(null);
+          resolve(response);
+        });
+      } catch (e) {
+        resolve(null);
       }
     });
-
-    if (filledCount) wcLog(filledCount + " campo(s) preenchido(s)");
-    return filledCount;
   }
+
+  async function ensurePersona(forceNew) {
+    if (persona && !forceNew) return persona;
+    var response = await ask({ type: forceNew ? "WC_NEW_PERSONA" : "WC_GET_PERSONA" });
+    if (response && response.persona) {
+      persona = response.persona;
+    } else if (!persona) {
+      // Service worker indisponível (ex.: página aberta antes da instalação):
+      // gera localmente para não deixar o usuário na mão.
+      persona = WC.buildPersona({ locale: settings.WC_locale, seed: settings.WC_seed });
+    }
+    return persona;
+  }
+
+  function loadSettings() {
+    return new Promise(function (resolve) {
+      chrome.storage.sync.get(null, function (items) {
+        settings = Object.assign({}, DEFAULTS, items || {});
+        chrome.storage.local.get(["WC_overrides"], function (local) {
+          overrides = (local && local.WC_overrides && local.WC_overrides[domain]) || {};
+          resolve(settings);
+        });
+      });
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Classificação com cache e com os "ensinamentos" do domínio
+  // -------------------------------------------------------------------
+
+  var LEGACY_ALIASES = {
+    userName: "fullName", userNames: "fullName",
+    telefone: "phone", telefones: "phone",
+    cep: "cep", ceps: "cep",
+    cpf: "cpf", cpfs: "cpf",
+    documento: "cpfCnpj", documentos: "cpfCnpj",
+    email: "email", emails: "email", senha: "password"
+  };
+
+  function typeOf(element) {
+    if (typeCache.has(element)) return typeCache.get(element);
+
+    var result;
+    var attr = element.getAttribute("web-copilot") || element.getAttribute("data-wc-type");
+    if (attr) {
+      result = { type: LEGACY_ALIASES[attr] || attr, score: 1000, skip: false, source: "atributo" };
+    } else {
+      var selector = WC.dom.selectorFor(element);
+      if (overrides[selector]) {
+        result = { type: overrides[selector], score: 999, skip: false, source: "ensinado" };
+      } else {
+        result = WC.detect.classify(WC.dom.extractSignals(element));
+      }
+    }
+
+    typeCache.set(element, result);
+    return result;
+  }
+
+  // -------------------------------------------------------------------
+  // Preenchimento
+  // -------------------------------------------------------------------
+
+  function fillOptions() {
+    return {
+      mode: settings.WC_mode,
+      humanTyping: settings.WC_human_typing,
+      fillUnknownSelects: settings.WC_fill_unknown_selects,
+      checkUnknownBoxes: settings.WC_check_unknown_boxes,
+      fillHidden: settings.WC_fill_hidden
+    };
+  }
+
+  async function fillAll(force) {
+    await ensurePersona(false);
+
+    var options = fillOptions();
+    // Semente derivada da persona: mesma persona => mesmos valores aleatórios
+    // (quantidades, selects sorteados) em toda re-execução.
+    var rnd = new WC.Random(persona.meta.seed ? persona.meta.seed + ":fill" : null);
+    var accent = accentColor();
+    var fields = WC.dom.collectFields(document);
+
+    if (force) WC.dom.resetRadioGroups();
+
+    var filled = 0;
+    var details = [];
+    var unknownFields = [];
+    var considered = 0;
+
+    fields.forEach(function (element) {
+      if (!WC.dom.isFillable(element, options)) return;
+      considered++;
+
+      if (element.getAttribute("data-wc-filled") === "1" && !force) return;
+
+      var result = typeOf(element);
+      if (result.skip) return;
+
+      if (!result.type) {
+        unknownFields.push({
+          selector: WC.dom.selectorFor(element),
+          label: (WC.dom.labelText(element) || element.getAttribute("placeholder") || element.getAttribute("name") || element.id || "campo sem rótulo").trim().slice(0, 60),
+          tag: element.tagName.toLowerCase()
+        });
+        return;
+      }
+
+      var label = WC.values.label(result.type);
+      if (settings.WC_show_suggestions) element.title = "Web Copilot: " + label;
+
+      var applied;
+      try {
+        applied = WC.dom.fillField(element, result.type, persona, rnd, options);
+      } catch (e) {
+        wcLog("falha ao preencher campo", e);
+        return;
+      }
+      if (applied === null || applied === undefined) return;
+
+      if (settings.WC_highlight) WC.dom.highlight(element, accent);
+      else element.setAttribute("data-wc-filled", "1");
+
+      if (settings.WC_show_labels) {
+        var isCheckable = element.type === "checkbox" || element.type === "radio";
+        WC.dom.addHint(element, accent, isCheckable ? "Marcado pelo WebCopilot" : "Atualizado pelo WebCopilot");
+      }
+
+      filled++;
+      details.push({ label: label, type: result.type, value: String(applied).slice(0, 60), source: result.source });
+    });
+
+    lastStats = { filled: filled, unknown: unknownFields.length, fields: considered, details: details, unknownFields: unknownFields };
+
+    if (filled) wcLog(filled + " campo(s) preenchido(s)", lastStats);
+    if (isTopFrame) renderHud();
+    else if (filled) ask({ type: "WC_FRAME_STATS", filled: filled, unknown: unknownFields.length, fields: considered });
+
+    return lastStats;
+  }
+
+  function clearMarks() {
+    var cleared = 0;
+    WC.dom.collectFields(document).forEach(function (element) {
+      if (element.getAttribute("data-wc-filled") === "1") {
+        WC.dom.clearHighlight(element);
+        cleared++;
+      }
+    });
+    document.querySelectorAll("small.wc-hint").forEach(function (n) { n.remove(); });
+    return cleared;
+  }
+
+  // -------------------------------------------------------------------
+  // Painel na página
+  // -------------------------------------------------------------------
+
+  function renderHud() {
+    if (!isTopFrame || !settings.WC_hud || !WC.hud) return;
+    if (!lastStats.filled && !WC.hud.isOpen()) return;
+
+    WC.hud.show({
+      accent: accentColor(),
+      persona: persona,
+      filled: lastStats.filled,
+      unknown: lastStats.unknown,
+      fields: lastStats.fields,
+      mode: settings.WC_mode
+    });
+  }
+
+  function wireHud() {
+    if (!WC.hud) return;
+    WC.hud.on({
+      fill: async function () {
+        var stats = await fillAll(true);
+        WC.hud.toast(stats.filled + " campo(s) preenchido(s)");
+      },
+      newPersona: async function () {
+        await ensurePersona(true);
+        typeCache = new WeakMap();
+        var stats = await fillAll(true);
+        WC.hud.toast("Nova persona: " + persona.firstName);
+        renderHud();
+        return stats;
+      },
+      undo: function () {
+        var restored = WC.dom.undoAll();
+        WC.hud.toast(restored + " campo(s) restaurado(s)");
+      },
+      copy: function () {
+        var text = JSON.stringify(persona, null, 2);
+        navigator.clipboard.writeText(text).then(
+          function () { WC.hud.toast("Persona copiada como JSON"); },
+          function () { WC.hud.toast("Não foi possível copiar"); }
+        );
+      },
+      clear: function () {
+        WC.hud.toast(clearMarks() + " marca(s) removida(s)");
+      },
+      expand: function () {
+        renderHud();
+      }
+    });
+  }
+
+  // -------------------------------------------------------------------
+  // Observador: formulários que aparecem depois (SPA, wizard, modal)
+  // -------------------------------------------------------------------
 
   function debounce(fn, wait) {
     var timer;
@@ -508,42 +334,143 @@
     };
   }
 
-  function startWatching(showSuggestions) {
-    fillForm(showSuggestions, false);
-    observer = new MutationObserver(debounce(function () {
-      fillForm(showSuggestions, false);
-    }, 400));
+  function startWatching() {
+    if (observer) return;
+    fillAll(false);
+    observer = new MutationObserver(debounce(function () { fillAll(false); }, 400));
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
-  // ---------------------------------------------------------------------
-  // Preenchimento sob demanda (popup / atalho), independente do toggle
-  // ---------------------------------------------------------------------
+  function stopWatching() {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+  }
+
+  // -------------------------------------------------------------------
+  // Mensagens
+  // -------------------------------------------------------------------
+
+  document.addEventListener("contextmenu", function (event) {
+    lastContextTarget = event.target;
+  }, true);
 
   chrome.runtime.onMessage.addListener(function (message, sender, sendResponse) {
-    if (message && message.type === "WC_FILL_NOW") {
-      chrome.storage.sync.get(["WC_show_suggestions"], function (items) {
-        var count = fillForm(!!items.WC_show_suggestions, true);
-        sendResponse({ ok: true, count: count });
-      });
-      return true;
+    if (!message || !message.type) return;
+
+    switch (message.type) {
+      case "WC_PING":
+        sendResponse({ ok: true, version: WC.VERSION, top: isTopFrame });
+        return;
+
+      case "WC_FILL_NOW":
+        loadSettings().then(function () {
+          typeCache = new WeakMap();
+          return fillAll(true);
+        }).then(function (stats) {
+          sendResponse({ ok: true, count: stats.filled, stats: stats });
+        });
+        return true;
+
+      case "WC_NEW_PERSONA_FILL":
+        loadSettings().then(function () {
+          persona = null;
+          typeCache = new WeakMap();
+          return ensurePersona(true);
+        }).then(function () {
+          return fillAll(true);
+        }).then(function (stats) {
+          sendResponse({ ok: true, count: stats.filled, persona: persona, stats: stats });
+        });
+        return true;
+
+      case "WC_FRAME_STATS_IN":
+        // Um iframe da página preencheu campos: soma no painel do topo.
+        lastStats.filled += message.stats.filled || 0;
+        lastStats.unknown += message.stats.unknown || 0;
+        lastStats.fields += message.stats.fields || 0;
+        renderHud();
+        return;
+
+      case "WC_PERSONA_UPDATED":
+        persona = message.persona;
+        renderHud();
+        return;
+
+      case "WC_UNDO":
+        sendResponse({ ok: true, count: WC.dom.undoAll() });
+        return;
+
+      case "WC_CLEAR":
+        sendResponse({ ok: true, count: clearMarks() });
+        return;
+
+      case "WC_REPORT":
+        sendResponse({ ok: true, stats: lastStats, persona: persona, top: isTopFrame });
+        return;
+
+      case "WC_FILL_FIELD":
+        // Vem do menu de contexto: preenche só o campo clicado.
+        (async function () {
+          if (!lastContextTarget) return sendResponse({ ok: false });
+          await ensurePersona(false);
+          var rnd = new WC.Random(null);
+          var applied = WC.dom.fillField(lastContextTarget, message.fieldType, persona, rnd, fillOptions());
+          if (applied !== null && applied !== undefined && settings.WC_highlight) {
+            WC.dom.highlight(lastContextTarget, accentColor());
+          }
+          sendResponse({ ok: applied !== null, value: applied });
+        })();
+        return true;
+
+      case "WC_TEACH":
+        if (!lastContextTarget) {
+          sendResponse({ ok: false });
+          return;
+        }
+        var selector = WC.dom.selectorFor(lastContextTarget);
+        chrome.storage.local.get(["WC_overrides"], function (local) {
+          var all = (local && local.WC_overrides) || {};
+          all[domain] = all[domain] || {};
+          all[domain][selector] = message.fieldType;
+          chrome.storage.local.set({ WC_overrides: all }, function () {
+            overrides = all[domain];
+            typeCache = new WeakMap();
+            sendResponse({ ok: true, selector: selector });
+          });
+        });
+        return true;
+
+      default:
+        return;
     }
   });
 
-  // ---------------------------------------------------------------------
-  // Inicialização
-  // ---------------------------------------------------------------------
-
-  chrome.storage.sync.get(["WC_autocomplete", "WC_show_suggestions"], function (items) {
-    wcLog("WC_items", items);
-    if (items.WC_autocomplete) {
-      startWatching(!!items.WC_show_suggestions);
-    } else {
-      wcLog("WC_autocomplete is disabled");
+  // Configuração mudou no popup: aplica na hora, sem recarregar a página.
+  chrome.storage.onChanged.addListener(function (changes, area) {
+    if (area === "sync") {
+      Object.keys(changes).forEach(function (key) { settings[key] = changes[key].newValue; });
+      if (changes.WC_autocomplete) {
+        if (settings.WC_autocomplete) startWatching();
+        else stopWatching();
+      }
+      if (changes.WC_hud && !settings.WC_hud && WC.hud) WC.hud.destroy();
+      if (changes.WC_mode || changes.WC_locale || changes.WC_seed) typeCache = new WeakMap();
+    }
+    if (area === "local" && changes.WC_overrides) {
+      overrides = (changes.WC_overrides.newValue || {})[domain] || {};
+      typeCache = new WeakMap();
     }
   });
 
-  function wcLog(msg, extra) {
-    console.log("%c WC > %c" + msg, "color:#f6c231", "color:#c1c1c1", extra !== undefined ? extra : "");
-  }
+  // -------------------------------------------------------------------
+  // Início
+  // -------------------------------------------------------------------
+
+  wireHud();
+  loadSettings().then(function () {
+    wcLog("webcopilot " + WC.VERSION + " pronto", { autocompletar: settings.WC_autocomplete, modo: settings.WC_mode });
+    if (settings.WC_autocomplete) startWatching();
+  });
 })();
