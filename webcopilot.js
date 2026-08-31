@@ -27,7 +27,8 @@
     WC_highlight: true,
     WC_hud: true,
     WC_mode: "valid",
-    WC_human_typing: false,
+    WC_human_typing: true,
+    WC_typing_speed: 22,
     WC_fill_unknown_selects: true,
     WC_check_unknown_boxes: false,
     WC_fill_hidden: false
@@ -184,6 +185,7 @@
     return {
       mode: settings.WC_mode,
       humanTyping: settings.WC_human_typing,
+      typingSpeed: Number(settings.WC_typing_speed) || 22,
       fillUnknownSelects: settings.WC_fill_unknown_selects,
       checkUnknownBoxes: settings.WC_check_unknown_boxes,
       fillHidden: settings.WC_fill_hidden
@@ -194,6 +196,9 @@
     await ensurePersona(false);
 
     var options = fillOptions();
+    // Fila da digitação animada: preenchida por fillField, executada em série
+    // no fim para o efeito sair um campo de cada vez.
+    options.typingQueue = [];
     // Semente derivada da persona: mesma persona => mesmos valores aleatórios
     // (quantidades, selects sorteados) em toda re-execução.
     var rnd = new WC.Random(persona.meta.seed ? persona.meta.seed + ":fill" : null);
@@ -252,6 +257,9 @@
     lastStats = { filled: filled, unknown: unknownFields.length, fields: considered, details: details, unknownFields: unknownFields };
 
     if (filled) wcLog(filled + " campo(s) preenchido(s)", lastStats);
+    // Não dá await: o relatório e o painel não devem esperar a animação
+    // terminar — o valor final já está decidido, o que falta é só mostrá-lo.
+    if (options.typingQueue.length) WC.dom.runTypingQueue(options.typingQueue);
     if (isTopFrame) renderHud();
     else if (filled) ask({ type: "WC_FRAME_STATS", filled: filled, unknown: unknownFields.length, fields: considered });
 
