@@ -12,26 +12,27 @@
     --brand: #ffd904;
     --brand-strong: #e6c400;
     --brand-ink: #8a6d00;
-    --brand-soft: rgba(255, 217, 4, .16);
+    --brand-soft: rgba(255, 217, 4, .14);
     --ink: #141414;
     --text: #16161a;
-    --muted: #63636d;
-    --border: #e9e9ee;
+    --muted: #62626c;
+    /* Borda em fio de cabelo: separa sem desenhar caixa. Substituiu o
+       preenchimento cinza que dava a cada bloco peso de cartão. */
+    --line: #ededf1;
     --bg: #ffffff;
-    --surface: #f7f7f9;
-    --orange: #b26a00;
-    --radius: 14px;
+    --surface: #fafafb;
+    --orange: #a35f00;
     --ease: cubic-bezier(.2, 0, .13, 1);
   }
   @media (prefers-color-scheme: dark) {
     :root {
       --brand-ink: #ffd904;
-      --brand-soft: rgba(255, 217, 4, .12);
-      --text: #eeeef2;
-      --muted: #9b9ba5;
-      --border: #32323a;
-      --bg: #17171b;
-      --surface: #212128;
+      --brand-soft: rgba(255, 217, 4, .10);
+      --text: #f0f0f4;
+      --muted: #a0a0aa;
+      --line: #2b2b33;
+      --bg: #131317;
+      --surface: #191920;
       --orange: #f0b429;
     }
   }
@@ -45,12 +46,12 @@
     background: var(--bg); color: var(--text); line-height: 1.6;
     -webkit-font-smoothing: antialiased;
   }
-  .wrap { max-width: 780px; margin: 0 auto; padding: 0 24px 80px; }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 0 28px 100px; }
 
   /* ---------- Topo ---------- */
   .hero {
-    text-align: center; padding: 64px 24px 44px;
-    background: radial-gradient(120% 90% at 50% 0%, var(--brand-soft), transparent 65%);
+    text-align: center; padding: 88px 24px 64px;
+    background: radial-gradient(100% 70% at 50% 0%, var(--brand-soft), transparent 70%);
   }
   .hero img {
     width: 76px; height: 76px; border-radius: 20px; object-fit: contain;
@@ -58,8 +59,8 @@
     animation: pop .5s var(--ease) both;
   }
   @keyframes pop { from { opacity: 0; transform: scale(.86) translateY(8px); } to { opacity: 1; transform: none; } }
-  .hero h1 { font-size: 34px; font-weight: 800; letter-spacing: -.9px; margin: 20px 0 8px; }
-  .hero p { font-size: 16px; color: var(--muted); max-width: 520px; margin: 0 auto; }
+  .hero h1 { font-size: 36px; font-weight: 750; letter-spacing: -1px; margin: 24px 0 12px; }
+  .hero p { font-size: 16.5px; color: var(--muted); max-width: 500px; margin: 0 auto; line-height: 1.65; }
   .pill {
     display: inline-block; margin-top: 18px; font-size: 11px; font-weight: 700;
     letter-spacing: .5px; text-transform: uppercase;
@@ -67,42 +68,51 @@
   }
 
   /* ---------- Blocos ---------- */
-  section { margin-top: 44px; }
+  /* Cada seção separada por um fio, não por uma moldura. Menos traço na tela
+     e a hierarquia continua legível. */
+  section { margin-top: 56px; padding-top: 56px; border-top: 1px solid var(--line); }
+  section:first-of-type { border-top: none; padding-top: 0; }
+
   h2 {
-    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
-    color: var(--muted); margin-bottom: 14px;
+    font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+    color: var(--muted); margin-bottom: 20px;
   }
-  .card {
-    border: 1px solid var(--border); border-radius: var(--radius);
-    background: var(--surface); padding: 20px 22px;
-  }
-  .card + .card { margin-top: 12px; }
-  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; letter-spacing: -.2px; }
-  .card p { color: var(--muted); font-size: 14px; }
-  .card p + p { margin-top: 10px; }
+  .card { padding: 0; }
+  .card + .card { margin-top: 28px; }
+  .card h3 { font-size: 17px; font-weight: 650; margin-bottom: 10px; letter-spacing: -.3px; }
+  .card p { color: var(--muted); font-size: 15px; }
+  .card p + p { margin-top: 12px; }
   .card b { color: var(--text); font-weight: 600; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 32px 28px; }
+  .grid .card h3 { font-size: 15px; margin-bottom: 6px; }
+  .grid .card p { font-size: 14px; }
 
   /* Destaque do bloco de segurança — é a mudança que o usuário precisa
      entender antes de ligar o automático. */
-  .card-warn { border-color: var(--brand); background: var(--brand-soft); }
+  /* Único bloco que mantém fundo: é a informação que o usuário precisa ler
+     antes de ligar o automático. Destaque por contraste com o resto, que
+     agora não tem caixa nenhuma. */
+  .card-warn {
+    background: var(--brand-soft); border-left: 3px solid var(--brand);
+    border-radius: 0 10px 10px 0; padding: 22px 24px;
+  }
   .card-warn h3::before { content: "⚠ "; }
 
   /* ---------- Atalhos ---------- */
   table { width: 100%; border-collapse: collapse; }
-  td { padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  td { padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
   td:last-child { text-align: right; }
   kbd {
     font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
-    background: var(--bg); border: 1px solid var(--border);
-    border-bottom-width: 2px; border-radius: 6px; padding: 3px 8px; white-space: nowrap;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 6px; padding: 3px 8px; white-space: nowrap; color: var(--text);
   }
 
   /* ---------- Modos ---------- */
-  .mode { display: flex; gap: 12px; align-items: flex-start; }
-  .mode + .mode { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .mode { display: flex; gap: 14px; align-items: flex-start; font-size: 15px; color: var(--muted); }
+  .mode + .mode { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--line); }
   .tag {
     flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px;
     text-transform: uppercase; letter-spacing: .4px; margin-top: 2px;
@@ -111,7 +121,7 @@
   .tag-invalid { background: rgba(178, 106, 0, .16); color: var(--orange); }
   .tag-chaos { background: rgba(214, 69, 69, .16); color: #d64545; }
 
-  ul { margin: 8px 0 0 18px; color: var(--muted); font-size: 14px; }
+  ul { margin: 8px 0 0 18px; color: var(--muted); font-size: 14.5px; }
   li { margin-bottom: 5px; }
 
   .cta {
@@ -126,7 +136,7 @@
   .cta:active { transform: scale(.985); }
 
   footer {
-    margin-top: 52px; padding-top: 22px; border-top: 1px solid var(--border);
+    margin-top: 64px; padding-top: 28px; border-top: 1px solid var(--line);
     text-align: center; font-size: 13px; color: var(--muted);
   }
 </style>
@@ -181,7 +191,7 @@
 
   <section>
     <h2>Atalhos</h2>
-    <div class="card" style="padding: 8px 22px">
+    <div class="card">
       <table>
         <tr><td>Preencher a página</td><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Y</kbd></td></tr>
         <tr><td>Nova persona e preencher</td><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Y</kbd></td></tr>
