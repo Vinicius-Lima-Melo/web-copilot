@@ -366,10 +366,17 @@
         <div class="row">
             <div class="row-text">
                 <div class="row-title">Digitação humana</div>
-                <div class="row-sub">Tecla a tecla — para campos com máscara</div>
+                <div class="row-sub">Escreve letra por letra, um campo de cada vez</div>
             </div>
             <label class="switch"><input type="checkbox" id="WC_human_typing"><span class="track"><span class="thumb"></span></span></label>
         </div>
+        <label class="input-row">
+            <div class="row-text">
+                <div class="row-title">Velocidade</div>
+                <div class="row-sub">Intervalo entre teclas, em ms — menor é mais rápido</div>
+            </div>
+            <input class="text tiny" type="number" id="WC_typing_speed" min="0" max="200" step="2">
+        </label>
         <div class="row">
             <div class="row-text">
                 <div class="row-title">Selects desconhecidos</div>

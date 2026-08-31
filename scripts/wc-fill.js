@@ -238,24 +238,64 @@
    * (jQuery Mask, IMask, v-mask antigos) precisam disso; sem essa opção o
    * campo fica com o valor cru e o site rejeita no submit.
    */
-  function typeValue(element, value) {
+  /** Uma tecla: a sequência de eventos que um campo com máscara espera ver. */
+  function pressKey(element, char) {
+    var keyInit = { key: char, bubbles: true, cancelable: true };
+    element.dispatchEvent(new KeyboardEvent("keydown", keyInit));
+    element.dispatchEvent(new KeyboardEvent("keypress", keyInit));
+    element.dispatchEvent(new InputEvent("beforeinput", { bubbles: true, cancelable: true, data: char, inputType: "insertText" }));
+    // A máscara pode ter reformatado o que já estava lá — parte-se do valor
+    // atual do campo, não do que a gente acha que escreveu.
+    nativeSetter(element, "value", element.value + char);
+    fireInput(element, char);
+    element.dispatchEvent(new KeyboardEvent("keyup", keyInit));
+  }
+
+  /**
+   * Intervalo entre teclas, em ms. Não é fixo de propósito: cadência
+   * perfeitamente regular lê como máquina, não como pessoa. A variação é
+   * pequena o bastante para não deixar a digitação lenta.
+   */
+  function keyDelay(rnd, base) {
+    var jitter = rnd ? rnd.int(-6, 10) : 0;
+    return Math.max(6, base + jitter);
+  }
+
+  /**
+   * Digita caractere a caractere.
+   *
+   * `delayMs = 0` roda tudo de uma vez, sem ceder o event loop — é o caminho
+   * usado por campo com máscara quando a animação está desligada: a máscara
+   * precisa dos eventos de tecla, mas ninguém precisa ver isso acontecendo.
+   *
+   * `delayMs > 0` espaça as teclas no tempo e devolve uma Promise. Aí dá para
+   * ver o texto aparecendo, que é o efeito pedido.
+   */
+  function typeValue(element, value, delayMs, rnd) {
     element.focus({ preventScroll: true });
     nativeSetter(element, "value", "");
     fireInput(element, "");
 
-    for (var i = 0; i < value.length; i++) {
-      var char = value.charAt(i);
-      var keyInit = { key: char, bubbles: true, cancelable: true };
-      element.dispatchEvent(new KeyboardEvent("keydown", keyInit));
-      element.dispatchEvent(new KeyboardEvent("keypress", keyInit));
-      element.dispatchEvent(new InputEvent("beforeinput", { bubbles: true, cancelable: true, data: char, inputType: "insertText" }));
-      // A máscara pode ter reformatado o que já estava lá — parte-se do valor
-      // atual do campo, não do que a gente acha que escreveu.
-      nativeSetter(element, "value", element.value + char);
-      fireInput(element, char);
-      element.dispatchEvent(new KeyboardEvent("keyup", keyInit));
+    if (!delayMs) {
+      for (var i = 0; i < value.length; i++) pressKey(element, value.charAt(i));
+      commit(element);
+      return null;
     }
-    commit(element);
+
+    return new Promise(function (resolve) {
+      var i = 0;
+      (function next() {
+        if (i >= value.length) {
+          commit(element);
+          return resolve(value);
+        }
+        // Campo pode sumir no meio da digitação (SPA re-renderizou o passo do
+        // wizard). Parar aqui evita disparar evento em nó órfão.
+        if (!element.isConnected) return resolve(value);
+        pressKey(element, value.charAt(i++));
+        setTimeout(next, keyDelay(rnd, delayMs));
+      })();
+    });
   }
 
   function setChecked(element, checked) {
@@ -507,10 +547,39 @@
       value = numeric || String(rnd.int(1, 100));
     }
 
-    if (options.humanTyping || masked) typeValue(element, value);
-    else setValue(element, value);
+    /**
+     * A animação não roda aqui dentro. `fillField` sempre devolve o valor
+     * final como string — mudar isso para uma Promise quebraria todo chamador
+     * (`String(applied)` viraria "[object Object]" no relatório).
+     *
+     * Quando o chamador quer o efeito de digitação, ele passa um array em
+     * `options.typingQueue` e recebe de volta thunks para executar na ordem
+     * que quiser. É o que faz o preenchimento sair um campo de cada vez em vez
+     * de todos os campos digitando ao mesmo tempo.
+     */
+    if (options.humanTyping && options.typingQueue) {
+      var speed = options.typingSpeed || 22;
+      options.typingQueue.push(function () { return typeValue(element, value, speed, rnd); });
+    } else if (options.humanTyping || masked) {
+      typeValue(element, value, 0, rnd);
+    } else {
+      setValue(element, value);
+    }
 
     return value;
+  }
+
+  /**
+   * Executa os thunks de digitação em série — um campo termina antes do
+   * próximo começar. Em paralelo, todos os campos apareceriam digitando ao
+   * mesmo tempo, que não é a sensação de alguém preenchendo um formulário.
+   */
+  function runTypingQueue(queue) {
+    return (queue || []).reduce(function (chain, thunk) {
+      return chain.then(function () {
+        try { return thunk(); } catch (e) { return null; }
+      });
+    }, Promise.resolve());
   }
 
   function undoAll() {
@@ -539,6 +608,7 @@
   WC.dom = {
     collectFields: collectFields,
     isFillable: isFillable,
+    runTypingQueue: runTypingQueue,
     isRendered: isRendered,
     extractSignals: extractSignals,
     selectorFor: selectorFor,

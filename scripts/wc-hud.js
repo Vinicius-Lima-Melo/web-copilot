@@ -22,7 +22,7 @@
     ".card{width:272px;background:#fff;border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.06);overflow:hidden;animation:pop .16s ease}",
     "@keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}",
     ".head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #eee;cursor:default}",
-    ".dot{width:8px;height:8px;border-radius:50%;background:var(--accent,#f6c231);flex:none}",
+    ".dot{width:8px;height:8px;border-radius:50%;background:#ffd904;flex:none}",
     ".head h2{font-size:12px;font-weight:700;margin:0;letter-spacing:.2px;flex:1}",
     ".mode{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:20px;background:#eef1f5;color:#5a6472}",
     ".mode.invalid{background:#fff1e6;color:#b45309}",
@@ -41,10 +41,15 @@
     ".actions{display:grid;grid-template-columns:1fr 1fr;gap:6px}",
     "button.act{border:1px solid #e4e4e9;background:#fff;border-radius:8px;padding:7px 6px;font-size:11px;font-weight:600;cursor:pointer;color:#3f3f46;display:flex;align-items:center;justify-content:center;gap:4px}",
     "button.act:hover{background:#f7f7f9;border-color:#d6d6dd}",
-    "button.act.primary{grid-column:1/-1;background:var(--accent,#f6c231);border-color:transparent;color:#3a2e00;font-size:12px;padding:9px}",
+    // Cor da MARCA, não a do site. O resto do HUD usa --accent (a cor de
+    // destaque do próprio site) para se integrar visualmente, mas a ação
+    // principal não pode depender disso: em site de cor lavada o botão ficava
+    // apagado e sem contraste. #141414 sobre #ffd904 dá 13.32:1.
+    "button.act.primary{grid-column:1/-1;background:#ffd904;border-color:transparent;color:#141414;font-weight:700;font-size:12px;padding:9px}",
+    "button.act.primary:hover{background:#e6c400}",
     "button.act.primary:hover{filter:brightness(1.05)}",
     ".toast{margin-top:8px;font-size:11px;color:#3f8f5f;min-height:14px}",
-    ".pill{width:38px;height:38px;border-radius:50%;background:var(--accent,#f6c231);border:0;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.24);display:flex;align-items:center;justify-content:center;font-size:17px}",
+    ".pill{width:38px;height:38px;border-radius:50%;background:#ffd904;border:0;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.24);display:flex;align-items:center;justify-content:center;font-size:17px}",
     "@media (prefers-color-scheme:dark){",
     ".card{background:#232329;box-shadow:0 8px 32px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.08)}",
     ".head{border-bottom-color:#33333b}.wrap{color:#e6e6ea}.persona span{color:#9c9ca6}",
@@ -146,7 +151,7 @@
   }
 
   function show(state) {
-    if (!host) build(state.accent || "#f6c231");
+    if (!host) build(state.accent || "#ffd904");
     if (collapsed) return;
 
     var persona = state.persona || {};

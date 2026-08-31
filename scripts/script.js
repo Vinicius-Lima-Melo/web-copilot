@@ -11,13 +11,13 @@
 
   var SYNC_KEYS = [
     "WC_show_suggestions", "WC_show_labels", "WC_highlight", "WC_hud",
-    "WC_human_typing", "WC_fill_unknown_selects", "WC_check_unknown_boxes", "WC_fill_hidden",
+    "WC_human_typing", "WC_typing_speed", "WC_fill_unknown_selects", "WC_check_unknown_boxes", "WC_fill_hidden",
     "WC_mode", "WC_locale", "WC_seed", "WC_min_age", "WC_max_age"
   ];
 
   var DEFAULTS = {
     WC_auto_sites: [], WC_show_suggestions: true, WC_show_labels: true, WC_highlight: true,
-    WC_hud: true, WC_human_typing: false, WC_fill_unknown_selects: true, WC_check_unknown_boxes: false,
+    WC_hud: true, WC_human_typing: true, WC_typing_speed: 22, WC_fill_unknown_selects: true, WC_check_unknown_boxes: false,
     WC_fill_hidden: false, WC_mode: "valid", WC_locale: "BR", WC_seed: "", WC_min_age: 18, WC_max_age: 70
   };
 
