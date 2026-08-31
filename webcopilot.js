@@ -19,7 +19,9 @@
   }
 
   var DEFAULTS = {
-    WC_autocomplete: false,
+    // `WC_auto_sites` substituiu o antigo booleano global `WC_autocomplete`.
+    // Ver scripts/wc-sites.js para o porquê (bug do compositor do WhatsApp).
+    WC_auto_sites: [],
     WC_show_suggestions: false,
     WC_show_labels: true,
     WC_highlight: true,
@@ -334,10 +336,21 @@
     };
   }
 
+  /** O automático só existe onde o usuário liberou. Ver scripts/wc-sites.js. */
+  function autofillPermitido() {
+    return WC.sites.canAutofill(domain, settings.WC_auto_sites);
+  }
+
   function startWatching() {
     if (observer) return;
+    if (!autofillPermitido()) return;
     fillAll(false);
-    observer = new MutationObserver(debounce(function () { fillAll(false); }, 400));
+    observer = new MutationObserver(debounce(function () {
+      // Reconfere a cada disparo: o usuário pode ter tirado o site da lista
+      // com a aba aberta, e o observer não morre sozinho.
+      if (!autofillPermitido()) return stopWatching();
+      fillAll(false);
+    }, 400));
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }
 
@@ -451,8 +464,8 @@
   chrome.storage.onChanged.addListener(function (changes, area) {
     if (area === "sync") {
       Object.keys(changes).forEach(function (key) { settings[key] = changes[key].newValue; });
-      if (changes.WC_autocomplete) {
-        if (settings.WC_autocomplete) startWatching();
+      if (changes.WC_auto_sites) {
+        if (autofillPermitido()) startWatching();
         else stopWatching();
       }
       if (changes.WC_hud && !settings.WC_hud && WC.hud) WC.hud.destroy();
@@ -470,7 +483,7 @@
 
   wireHud();
   loadSettings().then(function () {
-    wcLog("webcopilot " + WC.VERSION + " pronto", { autocompletar: settings.WC_autocomplete, modo: settings.WC_mode });
-    if (settings.WC_autocomplete) startWatching();
+    wcLog("webcopilot " + WC.VERSION + " pronto", { autocompletarAqui: autofillPermitido(), modo: settings.WC_mode });
+    if (autofillPermitido()) startWatching();
   });
 })();

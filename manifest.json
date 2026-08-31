@@ -2,18 +2,29 @@
   "manifest_version": 3,
   "name": "Web Copilot",
   "description": "Preenche formulários com dados de teste brasileiros válidos: CPF, CNPJ, CNH, PIS, cartão, PIX, boleto e mais de 120 tipos de campo.",
-  "version": "2.0",
-  "permissions": ["storage", "contextMenus", "scripting", "activeTab", "clipboardWrite"],
-  "host_permissions": ["<all_urls>"],
+  "version": "2.1",
+  "permissions": [
+    "storage",
+    "contextMenus",
+    "scripting",
+    "activeTab",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js"
   },
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "<all_urls>"
+      ],
       "all_frames": true,
       "js": [
         "scripts/wc-core.js",
+        "scripts/wc-sites.js",
         "scripts/wc-datasets.js",
         "scripts/wc-docs.js",
         "scripts/wc-persona.js",
@@ -28,15 +39,24 @@
   ],
   "commands": {
     "fill-now": {
-      "suggested_key": { "default": "Ctrl+Shift+Y", "mac": "Command+Shift+Y" },
+      "suggested_key": {
+        "default": "Ctrl+Shift+Y",
+        "mac": "Command+Shift+Y"
+      },
       "description": "Preencher o formulário da aba atual"
     },
     "new-persona": {
-      "suggested_key": { "default": "Alt+Shift+Y", "mac": "Alt+Shift+Y" },
+      "suggested_key": {
+        "default": "Alt+Shift+Y",
+        "mac": "Alt+Shift+Y"
+      },
       "description": "Gerar nova persona e preencher"
     },
     "undo-fill": {
-      "suggested_key": { "default": "Alt+Shift+Z", "mac": "Alt+Shift+Z" },
+      "suggested_key": {
+        "default": "Alt+Shift+Z",
+        "mac": "Alt+Shift+Z"
+      },
       "description": "Desfazer o último preenchimento"
     }
   },

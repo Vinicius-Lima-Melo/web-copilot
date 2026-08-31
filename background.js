@@ -8,6 +8,7 @@
  */
 importScripts(
   "scripts/wc-core.js",
+  "scripts/wc-sites.js",
   "scripts/wc-datasets.js",
   "scripts/wc-docs.js",
   "scripts/wc-persona.js",
@@ -16,6 +17,7 @@ importScripts(
 
 var CONTENT_FILES = [
   "scripts/wc-core.js",
+  "scripts/wc-sites.js",
   "scripts/wc-datasets.js",
   "scripts/wc-docs.js",
   "scripts/wc-persona.js",
@@ -140,12 +142,12 @@ function buildMenus() {
   });
 }
 
-chrome.runtime.onInstalled.addListener(function () {
+chrome.runtime.onInstalled.addListener(function (details) {
   buildMenus();
   // Semeia os padrões só na primeira instalação, sem sobrescrever escolhas.
   chrome.storage.sync.get(null, function (items) {
     var defaults = {};
-    if (items.WC_autocomplete === undefined) defaults.WC_autocomplete = false;
+    if (items.WC_auto_sites === undefined) defaults.WC_auto_sites = [];
     if (items.WC_show_suggestions === undefined) defaults.WC_show_suggestions = true;
     if (items.WC_show_labels === undefined) defaults.WC_show_labels = true;
     if (items.WC_highlight === undefined) defaults.WC_highlight = true;
@@ -153,8 +155,29 @@ chrome.runtime.onInstalled.addListener(function () {
     if (items.WC_mode === undefined) defaults.WC_mode = "valid";
     if (items.WC_locale === undefined) defaults.WC_locale = "BR";
     if (items.WC_fill_unknown_selects === undefined) defaults.WC_fill_unknown_selects = true;
+
+    /**
+     * Migração do antigo `WC_autocomplete` (booleano global).
+     *
+     * Quem tinha ligado estava com o automático valendo para o navegador
+     * inteiro — inclusive para as abas que causaram o bug do WhatsApp. Não dá
+     * para adivinhar em quais sites ele realmente queria, então a migração
+     * desliga e deixa a lista vazia: o usuário religa por site, no popup. A
+     * chave velha é removida para não voltar a valer em outro dispositivo
+     * sincronizado.
+     */
+    if (items.WC_autocomplete !== undefined) {
+      chrome.storage.sync.remove("WC_autocomplete");
+      if (items.WC_autocomplete === true) defaults.WC_auto_sites = items.WC_auto_sites || [];
+    }
+
     if (Object.keys(defaults).length) chrome.storage.sync.set(defaults);
   });
+
+  // Primeira instalação: abre a página que explica a extensão.
+  if (details && details.reason === "install") {
+    chrome.tabs.create({ url: chrome.runtime.getURL("welcome.html") });
+  }
 });
 
 chrome.contextMenus.onClicked.addListener(async function (info, tab) {
