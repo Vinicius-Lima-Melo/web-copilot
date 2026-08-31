@@ -10,13 +10,13 @@
   "use strict";
 
   var SYNC_KEYS = [
-    "WC_autocomplete", "WC_show_suggestions", "WC_show_labels", "WC_highlight", "WC_hud",
+    "WC_show_suggestions", "WC_show_labels", "WC_highlight", "WC_hud",
     "WC_human_typing", "WC_fill_unknown_selects", "WC_check_unknown_boxes", "WC_fill_hidden",
     "WC_mode", "WC_locale", "WC_seed", "WC_min_age", "WC_max_age"
   ];
 
   var DEFAULTS = {
-    WC_autocomplete: false, WC_show_suggestions: true, WC_show_labels: true, WC_highlight: true,
+    WC_auto_sites: [], WC_show_suggestions: true, WC_show_labels: true, WC_highlight: true,
     WC_hud: true, WC_human_typing: false, WC_fill_unknown_selects: true, WC_check_unknown_boxes: false,
     WC_fill_hidden: false, WC_mode: "valid", WC_locale: "BR", WC_seed: "", WC_min_age: 18, WC_max_age: 70
   };
@@ -27,6 +27,7 @@
     chaos: "XSS, SQL, unicode e strings gigantes para testar sanitização e limites."
   };
 
+  var WC = window.WC;
   var $ = function (id) { return document.getElementById(id); };
   var domain = "";
 
@@ -356,6 +357,65 @@
   }
 
   // -------------------------------------------------------------------
+  // Autocompletar deste site
+  //
+  // O antigo toggle era global e valia para o navegador inteiro — foi o que
+  // fez a extensão escrever no compositor do WhatsApp. Agora é por site, e o
+  // padrão é desligado em todos. Ver scripts/wc-sites.js.
+  // -------------------------------------------------------------------
+
+  function renderAutoSite() {
+    var toggle = $("WC_auto_site");
+    var nota = $("auto_site_note");
+    if (!toggle || !nota) return;
+
+    if (!domain) {
+      toggle.checked = false;
+      toggle.disabled = true;
+      nota.textContent = "Nenhuma página aberta para liberar.";
+      return;
+    }
+
+    if (WC.sites.isBlocked(domain)) {
+      toggle.checked = false;
+      toggle.disabled = true;
+      nota.innerHTML = "<b>" + escapeHtml(domain) + "</b> é um app de mensagem ou rede social — " +
+        "o automático fica sempre desligado aqui. O atalho manual continua funcionando.";
+      nota.className = "hint hint-block";
+      return;
+    }
+
+    chrome.storage.sync.get(["WC_auto_sites"], function (items) {
+      var lista = items.WC_auto_sites || [];
+      var ligado = WC.sites.canAutofill(domain, lista);
+      toggle.disabled = false;
+      toggle.checked = ligado;
+      nota.className = "hint";
+      nota.innerHTML = ligado
+        ? "Ligado para <b>" + escapeHtml(WC.sites.suggestPattern(domain)) + "</b> e seus subdomínios."
+        : "Desligado. Em <b>" + escapeHtml(domain) + "</b> só preenche quando você pedir.";
+    });
+  }
+
+  function wireAutoSite() {
+    var toggle = $("WC_auto_site");
+    if (!toggle) return;
+    toggle.addEventListener("change", function () {
+      chrome.storage.sync.get(["WC_auto_sites"], function (items) {
+        var lista = items.WC_auto_sites || [];
+        var nova = toggle.checked ? WC.sites.addSite(lista, domain) : WC.sites.removeSite(lista, domain);
+        chrome.storage.sync.set({ WC_auto_sites: nova }, renderAutoSite);
+      });
+    });
+  }
+
+  function escapeHtml(value) {
+    return String(value).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  // -------------------------------------------------------------------
   // Início
   // -------------------------------------------------------------------
 
@@ -370,6 +430,8 @@
         domain = new URL(tabs[0].url).hostname;
       } catch (e) { /* about:blank e afins */ }
     }
+    wireAutoSite();
+    renderAutoSite();
     renderOverrides();
     // Mostra o resultado do último preenchimento desta aba, se houver.
     toTab({ type: "WC_REPORT" }).then(function (response) {

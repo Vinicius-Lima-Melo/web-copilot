@@ -33,6 +33,9 @@ com suporte a Manifest V3.
 
 ## Como usar
 
+Na primeira instalação a extensão abre uma página explicando tudo isso —
+`welcome.html`, reabrível a qualquer momento pelo arquivo.
+
 | Ação | Como |
 |---|---|
 | Preencher a página | `Ctrl+Shift+Y`, o botão do popup, ou o painel flutuante |
@@ -113,6 +116,34 @@ Um painel flutuante em Shadow DOM (imune ao CSS do site) mostra quem é a person
 atual, quantos campos foram preenchidos e quantos ficaram de fora, com botões
 para repreencher, trocar de persona, desfazer, copiar o JSON e limpar as marcas.
 
+### Autocompletar é por site, e vem desligado
+
+Existe um modo que preenche **sozinho**, sem atalho: útil num formulário que
+você reexecuta muitas vezes, problema em qualquer outro lugar. Antes ele era um
+booleano global — ligar para testar um cadastro ligava para o navegador inteiro,
+e a extensão passava a escrever sozinha na caixa de mensagem do WhatsApp Web.
+
+Não era regra de detecção mal ajustada: o compositor do WhatsApp tem
+`aria-label="Digite uma mensagem"` e recebe **exatamente a mesma pontuação**
+(54, tipo `comment`) que um campo "Observações" de cadastro. Pelos sinais do DOM
+os dois são indistinguíveis, então nenhuma regra nova resolveria.
+
+O que resolve é separar o que estava junto:
+
+| | Onde funciona |
+|---|---|
+| **Manual** (atalho, popup, menu de contexto) | qualquer site — você escolheu o momento |
+| **Automático** (observa a página e preenche) | só nos sites que você liberou, um a um |
+
+O automático nasce desligado em todos os sites. Você libera no popup, na aba
+**Preencher**, e a liberação vale para o domínio e seus subdomínios (liberar
+`loja.com.br` cobre `homolog.loja.com.br`). Em apps de mensagem, e-mail e rede
+social — WhatsApp, Gmail, Slack, Telegram, X, Instagram e outros — o automático
+fica **sempre** desligado e nem aparece como opção; ali um envio acidental sai
+da tela, e o manual continua disponível com `Alt+Shift+Z` para desfazer.
+
+A lista fica em `scripts/wc-sites.js`, com testes em `tests/sites.test.js`.
+
 ### Sem recarregar a página
 
 Trocar qualquer configuração passa a valer na hora. Se a aba já estava aberta
@@ -136,7 +167,7 @@ verificação automática, sem precisar da extensão instalada.
 node --test "tests/*.test.js"   # só a lógica pura
 ```
 
-Três frentes: 95 testes de lógica no Node (documentos, detecção, modos,
+Três frentes: 107 testes de lógica no Node (documentos, detecção, modos,
 consistência entre regras/geradores/rótulos/menu), o preenchimento real de 103
 campos no Chrome headless com 29 verificações, e a validação do manifesto pelo
 próprio Chrome.
@@ -149,8 +180,10 @@ background.js           Service worker: persona compartilhada, menu de contexto,
                         atalhos, injeção sob demanda
 webcopilot.js           Content script: orquestra detecção + preenchimento
 index.html              Popup (3 abas)
+welcome.html            Página de boas-vindas (abre na primeira instalação)
 scripts/
   wc-core.js            PRNG com semente + utilidades de texto
+  wc-sites.js           Escopo do autocompletar por site + lista de bloqueio
   wc-datasets.js        Bases BR/US (cidades com DDD e CEP coerentes, bancos…)
   wc-docs.js            Documentos brasileiros: geradores + validadores
   wc-persona.js         Monta a persona coerente

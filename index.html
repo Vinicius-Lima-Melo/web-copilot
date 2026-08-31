@@ -6,35 +6,60 @@
     <title>Web Copilot</title>
     <!-- core + values dão ao popup os rótulos dos tipos de campo -->
     <script src="scripts/wc-core.js" defer></script>
+    <script src="scripts/wc-sites.js" defer></script>
     <script src="scripts/wc-values.js" defer></script>
     <script src="scripts/script.js" defer></script>
     <style>
+        /* Paleta da marca — os dois valores vêm do próprio logo, amostrados do
+           PNG: amarelo #ffd904 e o preto #141414 do disco.
+
+           Regra de uso do amarelo, medida e não estimada: #ffd904 como TEXTO
+           sobre branco dá 1.38:1, ilegível. Como PREENCHIMENTO com texto
+           #141414 em cima dá 13.32:1. Por isso o amarelo aqui é sempre fundo
+           de algo (botão, pílula, indicador), nunca cor de texto no tema
+           claro. Onde a marca precisa aparecer como texto, entra o âmbar
+           escuro --brand-ink (4.92:1 sobre branco). */
         :root {
-            --yellow: #f6c231;
-            --yellow-dark: #dda815;
-            --green: #2ecc71;
-            --green-dark: #27ae60;
-            --red: #e05252;
-            --orange: #d98324;
-            --text: #2c2c33;
-            --muted: #83838d;
-            --icon: #a3a3ab;
-            --border: #ececef;
+            --brand: #ffd904;
+            --brand-strong: #e6c400;
+            --brand-ink: #8a6d00;
+            --brand-soft: rgba(255, 217, 4, .16);
+            --ink: #141414;
+
+            --green: #1f9d55;
+            --green-dark: #178043;
+            --red: #d64545;
+            --orange: #b26a00;
+            --text: #16161a;
+            --muted: #6e6e78;
+            --icon: #9a9aa4;
+            --border: #e9e9ee;
             --bg: #ffffff;
             --surface: #f7f7f9;
             --track: #d8d8dd;
+
+            --radius: 12px;
+            --ease: cubic-bezier(.2, 0, .13, 1);
         }
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --text: #e8e8ec;
+                /* No escuro o amarelo funciona como texto (13.32:1 sobre
+                   #141414), então --brand-ink volta a ser a cor da marca. */
+                --brand-ink: #ffd904;
+                --brand-soft: rgba(255, 217, 4, .14);
+                --text: #eeeef2;
                 --muted: #9b9ba5;
                 --icon: #8b8b95;
-                --border: #35353d;
-                --bg: #1e1e23;
-                --surface: #292930;
+                --border: #33333b;
+                --bg: #1b1b20;
+                --surface: #26262d;
                 --track: #45454f;
             }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -50,14 +75,18 @@
         .header {
             display: flex;
             align-items: center;
-            gap: 9px;
-            padding: 12px 14px 10px;
+            gap: 10px;
+            padding: 13px 14px 11px;
+            /* Faixa sutil da marca no topo, sem pintar o popup inteiro de
+               amarelo — o amarelo puro em área grande cansa e rouba a
+               atenção dos botões de ação. */
+            background: linear-gradient(180deg, var(--brand-soft), transparent);
         }
-        .header img { width: 24px; height: 24px; border-radius: 6px; object-fit: contain; }
-        .header h1 { font-size: 14px; font-weight: 650; letter-spacing: -0.2px; flex: 1; }
+        .header img { width: 26px; height: 26px; border-radius: 7px; object-fit: contain; }
+        .header h1 { font-size: 14.5px; font-weight: 700; letter-spacing: -0.25px; flex: 1; }
         .badge {
             font-size: 9px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
-            color: var(--green-dark); background: rgba(46, 204, 113, .14);
+            color: var(--brand-ink); background: var(--brand-soft);
             padding: 3px 7px; border-radius: 20px;
         }
 
@@ -67,7 +96,8 @@
             color: var(--muted); padding: 8px 4px 9px; cursor: pointer; border-bottom: 2px solid transparent;
         }
         .tab:hover { color: var(--text); }
-        .tab.active { color: var(--text); border-bottom-color: var(--yellow); }
+        .tab.active { color: var(--text); border-bottom-color: var(--brand); }
+        .tab { transition: color .15s var(--ease), border-color .15s var(--ease); }
 
         .panel { display: none; padding: 12px 14px 14px; max-height: 470px; overflow-y: auto; }
         .panel.active { display: block; }
@@ -95,7 +125,7 @@
             position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; background: #fff;
             border-radius: 50%; transition: transform .15s; box-shadow: 0 1px 2px rgba(0,0,0,.25);
         }
-        .switch input:checked + .track { background: var(--yellow); }
+        .switch input:checked + .track { background: var(--brand); }
         .switch input:checked + .track .thumb { transform: translateX(15px); }
 
         .segmented { display: flex; background: var(--surface); border-radius: 9px; padding: 3px; gap: 3px; }
@@ -111,19 +141,29 @@
         button.action {
             width: 100%; display: flex; align-items: center; justify-content: center; gap: 7px;
             height: 38px; border: none; border-radius: 9px; font-size: 12.5px; font-weight: 650;
-            font-family: inherit; cursor: pointer; color: #fff; transition: filter .15s, transform .05s;
+            font-family: inherit; cursor: pointer; color: #fff;
+            transition: filter .15s var(--ease), transform .08s var(--ease), box-shadow .15s var(--ease);
         }
         button.action svg { width: 14px; height: 14px; flex-shrink: 0; }
         button.action:active { transform: scale(.985); }
         button.action:hover { filter: brightness(1.06); }
         button.action:disabled { opacity: .5; cursor: not-allowed; filter: none; }
-        #btn_fill { background: var(--green); margin-bottom: 7px; }
+        /* Ação principal na cor da marca. Texto #141414 sobre #ffd904 =
+           13.32:1, bem acima de AA — o inverso (amarelo sobre branco) seria
+           ilegível, ver comentário da paleta. */
+        #btn_fill {
+            background: var(--brand); color: var(--ink); margin-bottom: 7px;
+            box-shadow: 0 1px 2px rgba(20, 20, 20, .12), 0 6px 16px -6px rgba(255, 217, 4, .5);
+        }
+        #btn_fill:hover { background: var(--brand-strong); filter: none; }
         .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
         button.ghost {
             height: 34px; border: 1px solid var(--border); background: var(--bg); color: var(--text);
             border-radius: 9px; font-size: 11.5px; font-weight: 600; font-family: inherit; cursor: pointer;
         }
-        button.ghost:hover { background: var(--surface); }
+        button.ghost { transition: background .15s var(--ease), border-color .15s var(--ease); }
+        button.ghost:hover { background: var(--surface); border-color: var(--icon); }
+        button.ghost:active { transform: scale(.985); }
 
         .status { font-size: 11px; color: var(--muted); text-align: center; min-height: 15px; margin-top: 9px; line-height: 1.4; }
         .status.ok { color: var(--green-dark); }
@@ -160,8 +200,18 @@
             width: 108px; flex-shrink: 0; border: 1px solid var(--border); background: var(--bg); color: var(--text);
             border-radius: 7px; padding: 6px 8px; font-family: inherit; font-size: 11.5px; outline: none;
         }
-        input.text:focus, select.text:focus { border-color: var(--yellow); }
+        input.text:focus, select.text:focus { border-color: var(--brand); }
         input.tiny { width: 54px; }
+
+        /* Aviso/nota do escopo por site */
+        .hint {
+            font-size: 10.5px; line-height: 1.45; color: var(--muted);
+            padding: 8px 11px 10px; border-top: 1px solid var(--border);
+        }
+        .hint b { color: var(--text); font-weight: 600; }
+        .hint-block { color: var(--orange); }
+        .hint-block b { color: var(--orange); }
+        .switch input:disabled + .track { opacity: .45; cursor: not-allowed; }
 
         .kbd {
             font-family: ui-monospace, Menlo, monospace; font-size: 10px; background: var(--surface);
@@ -176,7 +226,7 @@
 <div class="header">
     <img src="./images/logo.png" alt="">
     <h1>Web Copilot</h1>
-    <span class="badge" id="version">v2.0</span>
+    <span class="badge" id="version">v2.1</span>
 </div>
 
 <div class="tabs">
@@ -217,11 +267,12 @@
                 <line x1="13" y1="10" x2="18" y2="10"/><line x1="13" y1="14" x2="17" y2="14"/>
             </svg>
             <div class="row-text">
-                <div class="row-title">Autocompletar</div>
-                <div class="row-sub">Preencher assim que a página carregar</div>
+                <div class="row-title">Autocompletar neste site</div>
+                <div class="row-sub">Preencher sozinho ao abrir e ao mudar a tela</div>
             </div>
-            <label class="switch"><input type="checkbox" id="WC_autocomplete"><span class="track"><span class="thumb"></span></span></label>
+            <label class="switch"><input type="checkbox" id="WC_auto_site"><span class="track"><span class="thumb"></span></span></label>
         </div>
+        <div class="hint" id="auto_site_note">Verificando o site…</div>
         <div class="row">
             <svg class="row-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="3" y="4" width="18" height="14" rx="2.4"/><path d="M8 21h8"/><path d="M12 18v3"/>

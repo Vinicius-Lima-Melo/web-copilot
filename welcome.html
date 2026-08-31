@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Web Copilot — instalado</title>
+<style>
+  /* Mesma paleta do popup: amarelo #ffd904 e preto #141414 amostrados do
+     logo. O amarelo é sempre preenchimento com texto escuro em cima
+     (13.32:1); como texto sobre branco daria 1.38:1 e seria ilegível. */
+  :root {
+    --brand: #ffd904;
+    --brand-strong: #e6c400;
+    --brand-ink: #8a6d00;
+    --brand-soft: rgba(255, 217, 4, .16);
+    --ink: #141414;
+    --text: #16161a;
+    --muted: #63636d;
+    --border: #e9e9ee;
+    --bg: #ffffff;
+    --surface: #f7f7f9;
+    --orange: #b26a00;
+    --radius: 14px;
+    --ease: cubic-bezier(.2, 0, .13, 1);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --brand-ink: #ffd904;
+      --brand-soft: rgba(255, 217, 4, .12);
+      --text: #eeeef2;
+      --muted: #9b9ba5;
+      --border: #32323a;
+      --bg: #17171b;
+      --surface: #212128;
+      --orange: #f0b429;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 24px 80px; }
+
+  /* ---------- Topo ---------- */
+  .hero {
+    text-align: center; padding: 64px 24px 44px;
+    background: radial-gradient(120% 90% at 50% 0%, var(--brand-soft), transparent 65%);
+  }
+  .hero img {
+    width: 76px; height: 76px; border-radius: 20px; object-fit: contain;
+    box-shadow: 0 10px 30px -8px rgba(20, 20, 20, .35);
+    animation: pop .5s var(--ease) both;
+  }
+  @keyframes pop { from { opacity: 0; transform: scale(.86) translateY(8px); } to { opacity: 1; transform: none; } }
+  .hero h1 { font-size: 34px; font-weight: 800; letter-spacing: -.9px; margin: 20px 0 8px; }
+  .hero p { font-size: 16px; color: var(--muted); max-width: 520px; margin: 0 auto; }
+  .pill {
+    display: inline-block; margin-top: 18px; font-size: 11px; font-weight: 700;
+    letter-spacing: .5px; text-transform: uppercase;
+    color: var(--brand-ink); background: var(--brand-soft); padding: 5px 12px; border-radius: 20px;
+  }
+
+  /* ---------- Blocos ---------- */
+  section { margin-top: 44px; }
+  h2 {
+    font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+    color: var(--muted); margin-bottom: 14px;
+  }
+  .card {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    background: var(--surface); padding: 20px 22px;
+  }
+  .card + .card { margin-top: 12px; }
+  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; letter-spacing: -.2px; }
+  .card p { color: var(--muted); font-size: 14px; }
+  .card p + p { margin-top: 10px; }
+  .card b { color: var(--text); font-weight: 600; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+
+  /* Destaque do bloco de segurança — é a mudança que o usuário precisa
+     entender antes de ligar o automático. */
+  .card-warn { border-color: var(--brand); background: var(--brand-soft); }
+  .card-warn h3::before { content: "⚠ "; }
+
+  /* ---------- Atalhos ---------- */
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 11px 0; border-bottom: 1px solid var(--border); font-size: 14px; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  td:last-child { text-align: right; }
+  kbd {
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px;
+    background: var(--bg); border: 1px solid var(--border);
+    border-bottom-width: 2px; border-radius: 6px; padding: 3px 8px; white-space: nowrap;
+  }
+
+  /* ---------- Modos ---------- */
+  .mode { display: flex; gap: 12px; align-items: flex-start; }
+  .mode + .mode { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+  .tag {
+    flex-shrink: 0; font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 6px;
+    text-transform: uppercase; letter-spacing: .4px; margin-top: 2px;
+  }
+  .tag-valid { background: var(--brand); color: var(--ink); }
+  .tag-invalid { background: rgba(178, 106, 0, .16); color: var(--orange); }
+  .tag-chaos { background: rgba(214, 69, 69, .16); color: #d64545; }
+
+  ul { margin: 8px 0 0 18px; color: var(--muted); font-size: 14px; }
+  li { margin-bottom: 5px; }
+
+  .cta {
+    display: inline-flex; align-items: center; gap: 8px; margin-top: 8px;
+    background: var(--brand); color: var(--ink); text-decoration: none;
+    font-weight: 700; font-size: 14px; padding: 12px 22px; border-radius: 10px;
+    border: none; cursor: pointer; font-family: inherit;
+    transition: background .15s var(--ease), transform .08s var(--ease);
+    box-shadow: 0 6px 18px -6px rgba(255, 217, 4, .6);
+  }
+  .cta:hover { background: var(--brand-strong); }
+  .cta:active { transform: scale(.985); }
+
+  footer {
+    margin-top: 52px; padding-top: 22px; border-top: 1px solid var(--border);
+    text-align: center; font-size: 13px; color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="images/logo.png" alt="Web Copilot">
+  <h1>Web Copilot instalado</h1>
+  <p>Preenche formulários com dados de teste brasileiros que passam na validação — CPF, CNPJ, cartão, boleto e mais de 120 tipos de campo.</p>
+  <div class="pill">100% offline · sem cadastro · sem custo</div>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <h2>Comece por aqui</h2>
+    <div class="card">
+      <h3>Abra um formulário e aperte <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Y</kbd></h3>
+      <p>Ele preenche a página com uma <b>persona coerente</b>: o e-mail deriva do nome, o DDD do telefone bate com a cidade, o CEP começa na faixa daquela cidade e "confirmar senha" bate com "senha". Não é dado aleatório — é um cadastro que passa na validação.</p>
+      <p>Não gostou da pessoa gerada? <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Y</kbd> troca a persona e preenche de novo. Se preencheu o que não devia, <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd> desfaz.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Antes de ligar o automático</h2>
+    <div class="card card-warn">
+      <h3>O automático é por site, e vem desligado</h3>
+      <p>Existe um modo que preenche sozinho, sem você apertar nada. Ele é útil num formulário que você está testando várias vezes — e um problema em qualquer outro lugar.</p>
+      <p>O motivo é concreto: a caixa de mensagem do WhatsApp Web tem <code>aria-label="Digite uma mensagem"</code>, e para o detector isso é <b>idêntico</b> a um campo "Observações" de cadastro — mesma pontuação, mesmo tipo. Com o automático valendo para o navegador inteiro, ele escrevia lá sozinho.</p>
+      <p>Por isso o automático só funciona nos sites que você liberar, um por um, no popup da extensão. Em apps de mensagem e rede social ele fica <b>sempre</b> desligado, mesmo que você tente ligar. O atalho manual continua funcionando em qualquer lugar — ali você escolheu o momento.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Três modos de dados</h2>
+    <div class="card">
+      <div class="mode">
+        <span class="tag tag-valid">Válido</span>
+        <div><b>O cadastro passa.</b> É o padrão. Todo documento sai com dígito verificador correto — conferido pelo validador na bateria de testes.</div>
+      </div>
+      <div class="mode">
+        <span class="tag tag-invalid">Inválido</span>
+        <div><b>Quebrado de propósito.</b> CPF com DV errado, e-mail malformado, nascimento no futuro, senha curta. Serve para conferir se a <i>sua</i> validação realmente reprova.</div>
+      </div>
+      <div class="mode">
+        <span class="tag tag-chaos">Caos</span>
+        <div><b>Entrada hostil.</b> XSS, SQL, unicode, RTL, emoji, strings de 1 KB. Serve para conferir sanitização, escaping e limites de tamanho.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Atalhos</h2>
+    <div class="card" style="padding: 8px 22px">
+      <table>
+        <tr><td>Preencher a página</td><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Y</kbd></td></tr>
+        <tr><td>Nova persona e preencher</td><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Y</kbd></td></tr>
+        <tr><td>Desfazer o preenchimento</td><td><kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>Z</kbd></td></tr>
+        <tr><td>Preencher <i>um</i> campo específico</td><td>botão direito no campo</td></tr>
+        <tr><td>Ensinar um campo que ele errou</td><td>botão direito no campo</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Quando ele errar</h2>
+    <div class="grid">
+      <div class="card">
+        <h3>Ensine o campo</h3>
+        <p>Botão direito no campo › <b>Ensinar: este campo é…</b>. Fica salvo por domínio e vale para as próximas visitas.</p>
+      </div>
+      <div class="card">
+        <h3>Veja o que ficou de fora</h3>
+        <p>O popup lista os campos que ele não reconheceu, prontos para você ensinar.</p>
+      </div>
+      <div class="card">
+        <h3>Repita o mesmo caso</h3>
+        <p>Defina uma <b>semente</b> na aba Persona: a mesma semente gera sempre a mesma pessoa, mesmo CPF, mesmo cartão.</p>
+      </div>
+      <div class="card">
+        <h3>Desfaça</h3>
+        <p><kbd>Alt</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> restaura os valores que estavam lá antes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Privacidade</h2>
+    <div class="card">
+      <p>Nenhum dado sai da sua máquina: não há requisição de rede, telemetria nem dependência externa. Os e-mails gerados usam domínios <code>.invalid</code> e <code>.test</code>, reservados por RFC, que nunca resolvem — nenhum e-mail de verificação escapa para a caixa de uma pessoa real.</p>
+    </div>
+  </section>
+
+  <section>
+    <button class="cta" id="btn_test">Abrir a página de testes</button>
+  </section>
+
+  <footer>
+    Dados fictícios, para testar seus próprios formulários. Nunca use em cadastro real.
+  </footer>
+</div>
+
+<script src="scripts/welcome.js"></script>
+</body>
+</html>
