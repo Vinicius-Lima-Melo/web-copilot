@@ -31,12 +31,12 @@
             --red: #d64545;
             --orange: #b26a00;
             --text: #16161a;
-            --muted: #6e6e78;
-            --icon: #9a9aa4;
-            --border: #e9e9ee;
+            --muted: #62626c;
+            --icon: #a8a8b2;
+            --border: #ededf1;
             --bg: #ffffff;
-            --surface: #f7f7f9;
-            --track: #d8d8dd;
+            --surface: #fafafb;
+            --track: #dcdce2;
 
             --radius: 12px;
             --ease: cubic-bezier(.2, 0, .13, 1);
@@ -48,13 +48,13 @@
                    #141414), então --brand-ink volta a ser a cor da marca. */
                 --brand-ink: #ffd904;
                 --brand-soft: rgba(255, 217, 4, .14);
-                --text: #eeeef2;
-                --muted: #9b9ba5;
-                --icon: #8b8b95;
-                --border: #33333b;
-                --bg: #1b1b20;
-                --surface: #26262d;
-                --track: #45454f;
+                --text: #f0f0f4;
+                --muted: #a0a0aa;
+                --icon: #85858f;
+                --border: #2b2b33;
+                --bg: #16161a;
+                --surface: #1e1e24;
+                --track: #3d3d47;
             }
         }
 
@@ -76,11 +76,10 @@
             display: flex;
             align-items: center;
             gap: 10px;
-            padding: 13px 14px 11px;
-            /* Faixa sutil da marca no topo, sem pintar o popup inteiro de
-               amarelo — o amarelo puro em área grande cansa e rouba a
-               atenção dos botões de ação. */
-            background: linear-gradient(180deg, var(--brand-soft), transparent);
+            padding: 15px 16px 12px;
+            /* Sem faixa de cor no topo: o amarelo já aparece no logo e no
+               botão principal. Repetir de fundo deixava a área mais suja do
+               que marcada. */
         }
         .header img { width: 26px; height: 26px; border-radius: 7px; object-fit: contain; }
         .header h1 { font-size: 14.5px; font-weight: 700; letter-spacing: -0.25px; flex: 1; }
@@ -99,23 +98,25 @@
         .tab.active { color: var(--text); border-bottom-color: var(--brand); }
         .tab { transition: color .15s var(--ease), border-color .15s var(--ease); }
 
-        .panel { display: none; padding: 12px 14px 14px; max-height: 470px; overflow-y: auto; }
+        .panel { display: none; padding: 16px 16px 18px; max-height: 470px; overflow-y: auto; }
         .panel.active { display: block; }
         .panel::-webkit-scrollbar { width: 8px; }
         .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
 
         .section-title {
-            font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
-            color: var(--muted); margin: 14px 0 7px;
+            font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .7px;
+            color: var(--muted); margin: 20px 0 6px;
         }
         .section-title:first-child { margin-top: 0; }
 
-        .card { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; }
-        .row { display: flex; align-items: center; gap: 11px; padding: 10px 11px; }
+        /* Sem moldura: as linhas se separam por um fio interno, como uma
+           lista de ajustes de sistema. Tira 4 traços por bloco da tela. */
+        .card { border: 0; border-radius: 0; overflow: visible; }
+        .row { display: flex; align-items: center; gap: 12px; padding: 12px 2px; }
         .row + .row { border-top: 1px solid var(--border); }
         .row-text { flex: 1; min-width: 0; }
-        .row-title { font-size: 12.5px; font-weight: 600; line-height: 16px; }
-        .row-sub { font-size: 10.5px; color: var(--muted); line-height: 14px; margin-top: 1px; }
+        .row-title { font-size: 13px; font-weight: 600; line-height: 17px; }
+        .row-sub { font-size: 11px; color: var(--muted); line-height: 15px; margin-top: 2px; }
         .row-icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--icon); }
 
         .switch { position: relative; width: 34px; height: 19px; flex-shrink: 0; cursor: pointer; }
@@ -128,7 +129,7 @@
         .switch input:checked + .track { background: var(--brand); }
         .switch input:checked + .track .thumb { transform: translateX(15px); }
 
-        .segmented { display: flex; background: var(--surface); border-radius: 9px; padding: 3px; gap: 3px; }
+        .segmented { display: flex; background: var(--surface); border-radius: 9px; padding: 3px; gap: 2px; border: 1px solid var(--border); }
         .segmented button {
             flex: 1; border: 0; background: none; font-family: inherit; font-size: 11.5px; font-weight: 600;
             color: var(--muted); padding: 6px 4px; border-radius: 7px; cursor: pointer;
@@ -159,7 +160,7 @@
         .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
         button.ghost {
             height: 34px; border: 1px solid var(--border); background: var(--bg); color: var(--text);
-            border-radius: 9px; font-size: 11.5px; font-weight: 600; font-family: inherit; cursor: pointer;
+            border-radius: 8px; font-size: 11.5px; font-weight: 600; font-family: inherit; cursor: pointer;
         }
         button.ghost { transition: background .15s var(--ease), border-color .15s var(--ease); }
         button.ghost:hover { background: var(--surface); border-color: var(--icon); }
@@ -184,7 +185,7 @@
         .list { display: flex; flex-direction: column; gap: 5px; }
         .item {
             display: flex; align-items: center; gap: 8px; font-size: 11.5px;
-            background: var(--surface); border-radius: 8px; padding: 7px 9px;
+            background: var(--surface); border-radius: 8px; padding: 8px 10px;
         }
         .item span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .item code { font-size: 10.5px; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
@@ -205,8 +206,8 @@
 
         /* Aviso/nota do escopo por site */
         .hint {
-            font-size: 10.5px; line-height: 1.45; color: var(--muted);
-            padding: 8px 11px 10px; border-top: 1px solid var(--border);
+            font-size: 11px; line-height: 1.5; color: var(--muted);
+            padding: 2px 2px 12px; border-top: 0; margin-top: -4px;
         }
         .hint b { color: var(--text); font-weight: 600; }
         .hint-block { color: var(--orange); }
