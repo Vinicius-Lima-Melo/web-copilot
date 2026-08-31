@@ -155,6 +155,8 @@ chrome.runtime.onInstalled.addListener(function (details) {
     if (items.WC_mode === undefined) defaults.WC_mode = "valid";
     if (items.WC_locale === undefined) defaults.WC_locale = "BR";
     if (items.WC_fill_unknown_selects === undefined) defaults.WC_fill_unknown_selects = true;
+    if (items.WC_human_typing === undefined) defaults.WC_human_typing = true;
+    if (items.WC_typing_speed === undefined) defaults.WC_typing_speed = 22;
 
     /**
      * Migração do antigo `WC_autocomplete` (booleano global).
